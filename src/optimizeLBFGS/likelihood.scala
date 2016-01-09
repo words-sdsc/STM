@@ -4,6 +4,7 @@ object likelihood {
   
   def main(args: Array[String]) 
   {
+    
   import breeze.linalg._
   import breeze.numerics.{exp, log}
   import breeze.optimize._
