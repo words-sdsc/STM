@@ -10,7 +10,7 @@ object likelihood {
   import breeze.optimize._
 
   println("Maximization of Likelihood Function")
-      
+  
   def lhoodFunction(beta: DenseMatrix[Double], doc_ct: DenseVector[Double], mu: DenseVector[Double], siginv: DenseMatrix[Double]): DiffFunction[DenseVector[Double]] = {
     
     // f = -(objective function)
