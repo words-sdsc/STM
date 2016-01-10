@@ -1,6 +1,7 @@
 package optimizeLBFGS
 
-object hessPhiBound {
+object hessPhiBound 
+{
   import breeze.linalg._
   import breeze.numerics.{exp, log, sqrt, abs}
   import breeze.optimize._
@@ -57,5 +58,6 @@ object hessPhiBound {
              //toDenseMatrix performs transpose so no explicit transpose needed
               
     (EB, (eta, nu), bound(0))
+    // phi = EB
   }
 }
