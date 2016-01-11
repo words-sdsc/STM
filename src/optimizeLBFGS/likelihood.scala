@@ -38,7 +38,7 @@ object likelihood {
       override def gradientAt(eta: DenseVector[Double]): DenseVector[Double] = {
         val expeta = new DenseVector((eta.data ++ Array(0.0)).map(x => exp(x)))
         val betas = beta(::, *) :* expeta                                     //each column of beta .* expeta (elementwise)
-        val part1 = beta*( doc_ct / sum(beta(::,*)).toDenseVector) - (expeta *(sum(doc_ct)/sum(expeta)))
+        val part1 = betas*( doc_ct / sum(betas(::,*)).toDenseVector) - (expeta *(sum(doc_ct)/sum(expeta)))
         //explicit transpose of row-sum removed, toDenseVector transposes it
         val part2 = siginv*(eta - mu) 
         val part1s = new DenseVector(part1.data.dropRight(1))   //drop the last row
@@ -56,18 +56,16 @@ object likelihood {
     f
   }// end lhoodFunction
     
-    val lbfgs = new LBFGS[DenseVector[Double]](tolerance = 1E-50, maxIter = 1000000000)    //maxIter = 10000 removed
+    val lbfgs = new LBFGS[DenseVector[Double]](tolerance = 1E-12, m=11)    //maxIter = 10000 removed tolerance = 1E-28
     
     
     //**************************** Test Fixture : Start *************************
     
-    
-    //Json import section * start
+    //JSON import section * start
     try {
       val parser : JSONParser = new JSONParser();
       val reader : FileReader = new FileReader("/Users/aloksingh/Downloads/benchmark.JSON");
       val jsonObject :JSONObject = (parser.parse(reader)).asInstanceOf[JSONObject]
-      
       
       val outp = jsonObject.get("benchmark").asInstanceOf[HashMap[String, JSONObject]]
       println(outp.keySet())
@@ -80,7 +78,6 @@ object likelihood {
       
       val f  = jsonObject.get("inputs").asInstanceOf[HashMap[String, JSONObject]]
       println(f.keySet())
-
        
       var temp = f.get("mu").asInstanceOf[JSONArray]     
       val mup : DenseVector[Double] = DenseVector.zeros[Double](temp.size())     
@@ -101,14 +98,14 @@ object likelihood {
       }
       
       var temp4 = f.get("beta").asInstanceOf[JSONArray]       
-      val betap : DenseMatrix[Double] = DenseMatrix.zeros[Double](75,108)     
+      val betap : DenseMatrix[Double] = DenseMatrix.zeros[Double](75,108) 
       for(i <- 0 until temp4.size()) {
             var ccc = temp4.get(i).asInstanceOf[JSONArray]     
             for(j <- 0 until ccc.size()) {
               betap(i,j) = ccc.get(j).toString().toDouble
             }
       }
-      
+            
       var temp5 = f.get("siginv").asInstanceOf[JSONArray]       
       val siginvp : DenseMatrix[Double] = DenseMatrix.zeros[Double](74,74)     
       for(i <- 0 until temp5.size()) {
@@ -117,8 +114,7 @@ object likelihood {
               siginvp(i,j) = eee.get(j).toString().toDouble
             }
       }
-      
-      
+            
       /*val initialEta = DenseVector.rand(ntopics-1)
       val mup        = DenseVector.rand(ntopics-1)
       val betap      = DenseMatrix.rand(ntopics, vacobSize)
@@ -126,24 +122,26 @@ object likelihood {
       
       val likeliHoodF  = lhoodFunction(betap, doc_ctp, mup, siginvp)    
       val newEta       = lbfgs.minimize(likeliHoodF, initialEta)
+      
+      println("-----initialEta data output-------")
+      println(initialEta)
+      println(likeliHoodF.valueAt(initialEta))
+      println(likeliHoodF.gradientAt(initialEta))
+      
+      println("-----newEta data output-------")
+      println(newEta)
       println(likeliHoodF.valueAt(newEta))
       println(likeliHoodF.gradientAt(newEta))
-      println("-----test data output-------")
-            
-   
-      println(gradCheck)
       
+      /*println("-----test data output-------")
+      println(gradCheck)  
       println("-----diff of grad output-------")
       println(likeliHoodF.gradientAt(newEta) - gradCheck)
-
+      println(likeliHoodF.gradientAt(newEta) - likeliHoodF.gradientAt(newEta)) */
       
-      
-      //println(likeliHoodF.gradientAt(newEta) - likeliHoodF.gradientAt(newEta))
     } catch {
           case e: Exception => println(e.getMessage)
     }
-    
-    
     
     //JSON import section end
     
@@ -154,15 +152,7 @@ object likelihood {
     val mup        = DenseVector.rand(ntopics-1)
     val betap      = DenseMatrix.rand(ntopics, vacobSize)
     val doc_ctp    = linspace(1.0, vacobSize, vacobSize) */
-        
-    // for each document, get f and minimize it {  
-            //println(initialEta)
-          
-            
-            //println(newEta)
-            //println(likeliHoodF.valueAt(newEta))
-            //println(likeliHoodF.gradientAt(newEta) - likeliHoodF.gradientAt(newEta))
-    // }    
+     
 
     //**************************** Test Fixture : End *************************
 
