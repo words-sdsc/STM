@@ -32,10 +32,11 @@ object hessPhiBound
            } catch {
       
              case e: Exception => { 
-                         //update diagonal and recalculate cholesky
+                         //update diagonal and recalculate Cholesky
                          val dvec = diag(hessianM)
                          
                          val pos = abs(hessianM)
+                         
                          val magnitudes = sum(pos(*,::)) - abs(dvec)
                          
                          val dvecMin = DenseVector.rand[Double](dvec.length)
@@ -57,7 +58,7 @@ object hessPhiBound
              val bound            = log(theta.toDenseMatrix * beta)*doc_ct + detTerm - diff.t * siginv * diff * 0.5 - sigmaentropy
              //toDenseMatrix performs transpose so no explicit transpose needed
               
-    (EB, (eta, nu), bound(0))
+    (EB, (eta, nuFinal), bound(0))
     // phi = EB
   }
 }
