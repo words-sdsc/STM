@@ -4,3 +4,6 @@ eclipse
 exit
 eclipse
 exit
+quit
+quit()
+exit
