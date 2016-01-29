@@ -15,7 +15,7 @@ object likelihood {
   {
     
   import breeze.linalg._
-  import breeze.numerics.{exp, log}
+  import breeze.numerics.{exp, log, sqrt}
   import breeze.optimize._
 
   println("Maximization of Likelihood Function")
@@ -70,11 +70,44 @@ object likelihood {
       val outp = jsonObject.get("benchmark").asInstanceOf[HashMap[String, JSONObject]]
       println(outp.keySet())
       
+      var uuu = outp.get("hpbcpp").asInstanceOf[JSONObject].get("eta").asInstanceOf[JSONObject].get("lambda").asInstanceOf[JSONArray]
       var ggg = outp.get("grad").asInstanceOf[JSONArray] 
-      val gradCheck : DenseVector[Double] = DenseVector.zeros[Double](ggg.size())     
+      
+      
+      //--
+      var jsonoptiEtaSum = 1.0
+      
+      val jsonoptiEta : DenseVector[Double] = DenseVector.zeros[Double](uuu.size()) 
+      val jsonoptiEtaNorm : DenseVector[Double] = DenseVector.zeros[Double](uuu.size()+1)     
+
+       for(i <- 0 until uuu.size()) {
+        jsonoptiEta(i) = (uuu.get(i).asInstanceOf[JSONArray]).get(0).toString.toDouble
+        jsonoptiEtaSum = jsonoptiEtaSum + exp(jsonoptiEta(i))
+       }
+      
+      for(i <- 0 until uuu.size()) {
+        jsonoptiEtaNorm(i) = exp(jsonoptiEta(i)) / jsonoptiEtaSum
+      }
+      jsonoptiEtaNorm(74) = 1.0 / jsonoptiEtaSum
+      println("&&&&&&&&&&&&&&&&&&&&& opti eta json normalized &&&&&&&&&&&&&&&&&&&&&")
+      println(jsonoptiEtaNorm)
+      println("&&&&&&&&&&&&&&&&&&&&& opti eta json normalized &&&&&&&&&&&&&&&&&&&&&")
+      //--
+      
+      val gradCheck : DenseVector[Double] = DenseVector.zeros[Double](ggg.size()) 
+      val jsongradNorm : DenseVector[Double] = DenseVector.zeros[Double](ggg.size()+1)     
+
+      var gradSum = 1.0
       for(i <- 0 until ggg.size()) {
         gradCheck(i) = (ggg.get(i).asInstanceOf[JSONArray]).get(0).toString.toDouble
+        gradSum = gradSum + exp(gradCheck(i))
        }
+ 
+      
+      for(i <- 0 until ggg.size()) {
+        jsongradNorm(i) = exp(gradCheck(i)) / gradSum
+      }
+      jsongradNorm(74) = 1.0 / gradSum
       
       val f  = jsonObject.get("inputs").asInstanceOf[HashMap[String, JSONObject]]
       println(f.keySet())
@@ -123,7 +156,7 @@ object likelihood {
       val likeliHoodF  = lhoodFunction(betap, doc_ctp, mup, siginvp)    
       val newEta       = lbfgs.minimize(likeliHoodF, initialEta)
       
-      println("-----initialEta data output-------")
+      /*println("-----initialEta data output-------")
       println(initialEta)
       println(likeliHoodF.valueAt(initialEta))
       println(likeliHoodF.gradientAt(initialEta))
@@ -131,7 +164,54 @@ object likelihood {
       println("-----newEta data output-------")
       println(newEta)
       println(likeliHoodF.valueAt(newEta))
-      println(likeliHoodF.gradientAt(newEta))
+      println(likeliHoodF.gradientAt(newEta))*/
+      
+      val newGradient = likeliHoodF.gradientAt(newEta)
+       
+      //normalizing newGradient @ newEta
+      var newSum = 1.0
+      for(i <- 0 until newGradient.length) {
+        newSum = newSum + exp(newGradient(i))
+      }
+      
+      val newgradNorm : DenseVector[Double] = DenseVector.zeros[Double](newGradient.length+1)     
+      for(i <- 0 until newGradient.length) {
+        newgradNorm(i) = exp(newGradient(i)) / newSum
+      }
+      newgradNorm(74) = 1.00 / newSum
+      
+      
+      //normalizing newEta
+      newSum = 1.0
+      for(i <- 0 until newEta.length) {
+        newSum = newSum + exp(newEta(i))
+      }
+      
+      val newEtaNorm : DenseVector[Double] = DenseVector.zeros[Double](newEta.length+1)     
+      for(i <- 0 until newEta.length) {
+        newEtaNorm(i) = exp(newEta(i)) / newSum
+      }
+      newEtaNorm(74) = 1.00 / newSum
+      
+      
+      println("normalized gradients*******************")
+      println("Gradient parameter at new optimal eta from Scala")
+      //println(newGradient)
+      println("newEta normalized start")
+      println(newEtaNorm)
+      println("newEta normalized end")
+
+      println(newgradNorm)
+      println(newgradNorm.length)
+      
+      println("Gradient parameters at json output")
+      //println(gradCheck)
+      println(jsongradNorm.length)
+      println(jsongradNorm)
+      
+      println("\n\ndifference b/w gradient parameter*******************")
+      println(jsongradNorm - newgradNorm)
+
       
       /*println("-----test data output-------")
       println(gradCheck)  
