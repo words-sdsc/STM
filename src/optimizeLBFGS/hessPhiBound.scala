@@ -5,10 +5,11 @@ object hessPhiBound
   import breeze.linalg._
   import breeze.numerics.{exp, log, sqrt, abs}
   import breeze.optimize._
+
   
   // colvec eta, mat beta, colvec v doc_ct, colvec mu, mat siginv, colvec sigmaentropy
-  def hessPhiBoundFunction(eta: DenseVector[Double], beta: DenseMatrix[Double], doc_ct: DenseVector[Double], 
-      mu: DenseVector[Double], siginv: DenseMatrix[Double], sigmaentropy: DenseVector[Double]): 
+  def evaluate(eta: DenseVector[Double], beta: DenseMatrix[Double], doc_ct: DenseVector[Double], 
+      mu: DenseVector[Double], siginv: DenseMatrix[Double], sigmaentropy: Double): 
       Tuple3[DenseMatrix[Double],Tuple2[DenseVector[Double], DenseMatrix[Double]],Double] = {
    
       val expetaCol = new DenseVector(eta.data ++ Array(0.0)).map(x => exp(x))
@@ -33,14 +34,10 @@ object hessPhiBound
       
              case e: Exception => { 
                          //update diagonal and recalculate Cholesky
-                         val dvec = diag(hessianM)
-                         
-                         val pos = abs(hessianM)
-                         
-                         val magnitudes = sum(pos(*,::)) - abs(dvec)
-                         
-                         val dvecMin = DenseVector.rand[Double](dvec.length)
-                         
+                         val dvec = diag(hessianM) 
+                         val pos = abs(hessianM) 
+                         val magnitudes = sum(pos(*,::)) - abs(dvec) 
+                         val dvecMin = DenseVector.rand[Double](dvec.length) 
                          for( i <- 0 until dvec.length ) { 
                                dvecMin(i) = min(dvec(i), magnitudes(i))
                          }

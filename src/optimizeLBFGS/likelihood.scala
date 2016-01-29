@@ -11,16 +11,13 @@ import org.json.simple.parser.ParseException;
 
 object likelihood {
   
-  def main(args: Array[String]) 
-  {
-    
+  
   import breeze.linalg._
   import breeze.numerics.{exp, log, sqrt}
   import breeze.optimize._
-
-  println("Maximization of Likelihood Function")
   
-  def lhoodFunction(beta: DenseMatrix[Double], doc_ct: DenseVector[Double], mu: DenseVector[Double], siginv: DenseMatrix[Double]): DiffFunction[DenseVector[Double]] = {
+  def lhoodFunction(beta: DenseMatrix[Double], doc_ct: DenseVector[Double], mu: DenseVector[Double], 
+      siginv: DenseMatrix[Double]): DiffFunction[DenseVector[Double]] = {
     
     // f = -(objective function)
     val f = new DiffFunction[DenseVector[Double]] {
@@ -55,6 +52,14 @@ object likelihood {
     
     f
   }// end lhoodFunction
+  
+  def main(args: Array[String]) 
+  {
+    
+
+  println("Maximization of Likelihood Function")
+  
+  
     
     val lbfgs = new LBFGS[DenseVector[Double]](tolerance = 1E-12, m=11)    //maxIter = 10000 removed tolerance = 1E-28
     
