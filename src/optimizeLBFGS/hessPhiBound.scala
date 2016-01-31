@@ -16,8 +16,8 @@ object hessPhiBound
       val theta     = expetaCol/sum(expetaCol)
       
       val EBa  = beta.copy
-      val EBb  = EBa(::, *) :* expetaCol
-      val EB   = EBb(*, ::) :* (sqrt(doc_ct) / sum(EBb(::, *)).toDenseVector)
+      val EBb  = EBa(::, *) :* expetaCol    //horizontal multiplication
+      val EB   = EBb(*, ::) :* (sqrt(doc_ct) / sum(EBb(::, *)).toDenseVector) //vert multi
       
       val hess = EB*EB.t - (theta*theta.t)*sum(doc_ct)
 

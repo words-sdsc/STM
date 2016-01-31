@@ -91,6 +91,7 @@ object estep {
       val lbfgs = new LBFGS[DenseVector[Double]](tolerance = 1E-12, m=11)    //maxIter = 10000 removed tolerance = 1E-28
       val likeliHoodF  = likelihood.lhoodFunction(beta, doc_ct, mu, siginv) 
                          //how does it get which doc_ct is for which word in dict ?
+                         //--> adjust #rows in beta as per #rows in doc_ct (drop all zero rows) maintain order
       val newEta       = lbfgs.minimize(likeliHoodF, eta)
       
       hessPhiBound.evaluate(newEta, beta, doc_ct, mu, siginv, sigmaentropy )
