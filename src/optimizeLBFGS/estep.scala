@@ -32,8 +32,9 @@ object estep {
     val lambda = DenseMatrix.zeros[Double](K-1, N) //every COL is a lambda of len K-1, 
                                                    //transpose it before returning
      
-     
-    //preprocessing of common components
+    //queue[1] -> implement cholesky inversion of sigma matrix
+    
+    //pre-processing of common components
       var sigobj       = DenseMatrix.zeros[Double](1,1)
       var sigmaentropy = 0.0
       val siginv       = inv(sigma)
@@ -44,40 +45,35 @@ object estep {
            } catch {
              case e: Exception => { 
              sigmaentropy = 0.5 * (log(det(sigma).abs)) 
-             } 
+           } 
              
            }//end catch
-    
-    
-    //iterate over documents 1...N
-    for(j <- 0 until N) {
-      val doc    = documents(j)
-      val wordIndices   = (documents(j)(0, ::).t).data.map(_.toInt).toIndexedSeq 
-      //1st row of doc = indices of words
-      val aspect = betaIndex(j)
-      val init   = lambdaOld(j,::).t //matrix N x K-1, each row is a lambda for a doc
-      //if(updateMu)  //check if we need this
-      val mu_j   = mu(::,j) 
-      val beta_j = beta(aspect)(::, wordIndices).toDenseMatrix
+     
+      //iterate over documents 1...N   
+      List.tabulate(documents.length){ indx => g(documents(indx),indx) }  
       
-      //infer the document
-      val results : Tuple3[DenseMatrix[Double],Tuple2[DenseVector[Double], DenseMatrix[Double]],Double] = 
-        logisticnormal(init, mu_j, siginv, beta_j, doc(1,::).t, sigmaentropy)
-      //2nd row of doc = count of words
-
-      //update the global values
+      //http://stackoverflow.com/questions/9137644/how-to-get-the-element-index-when-mapping-an-array-in-scala?lq=1
+      //http://docs.scala-lang.org/overviews/parallel-collections/overview.html
       
-      //sigma
-      sigma_g += results._2._2
-      //beta
-      beta_g(aspect)(::, wordIndices) += results._1.asInstanceOf[Matrix[Double]]
-      //bound
-      bound(j) = results._3
-      //lambda
-      lambda(::, j) := results._2._1 //each COL is a lambda
-       
-    }
-           
+      def g(doc: DenseMatrix[Double], j: Int) = { 
+          val wordIndices   = (doc(0, ::).t).data.map(_.toInt).toIndexedSeq 
+          //1st row of doc = indices of words
+          val aspect = betaIndex(j)
+          val init   = lambdaOld(j,::).t //matrix N x K-1, each row is a lambda for a doc
+          //if(updateMu)  //check if we need this
+          val mu_j   = mu(::,j) 
+          val beta_j = beta(aspect)(::, wordIndices).toDenseMatrix
+          
+          //infer the document
+          val results = logisticnormal(init, mu_j, siginv, beta_j, doc(1,::).t, sigmaentropy)
+                                                                    //doc(2nd row)=count of words
+          //update the global values 
+          sigma_g += results._2._2
+          beta_g(aspect)(::, wordIndices) += results._1.asInstanceOf[Matrix[Double]]
+          bound(j) = results._3
+          lambda(::, j) := results._2._1 //each COL is a lambda     
+      }
+      
     (sigma_g, beta_g, bound, lambda.t)
     //transpose lambda so that each ROW is a lambda of length K-1
     
@@ -91,10 +87,12 @@ object estep {
       val lbfgs = new LBFGS[DenseVector[Double]](tolerance = 1E-12, m=11)    //maxIter = 10000 removed tolerance = 1E-28
       val likeliHoodF  = likelihood.lhoodFunction(beta, doc_ct, mu, siginv) 
                          //how does it get which doc_ct is for which word in dict ?
-                         //--> adjust #rows in beta as per #rows in doc_ct (drop all zero rows) maintain order
+                         //--> adjust #cols in beta = #rows in doc_ct (drop all zero rows& maintain order)
+                         //--> beta*doc_ct
       val newEta       = lbfgs.minimize(likeliHoodF, eta)
       
       hessPhiBound.evaluate(newEta, beta, doc_ct, mu, siginv, sigmaentropy )
   }
   
+  //queue[2] -> test hessian, phi, bound calculation 
 }
