@@ -56,7 +56,18 @@ object likelihood {
   def main(args: Array[String]) 
   {
     
-
+      import scala.math.random
+      import org.apache.spark._
+            val conf = new SparkConf().setAppName("Spark Pi")
+            .setMaster("local")
+            val spark = new SparkContext(conf)
+            val textFile = spark.textFile("hdfs://localhost:9000/whereIsHadoop.txt")
+            val counts = textFile.flatMap(line => line.split(" "))
+                 .map(word => (word, 1))
+                 .reduceByKey(_ + _)
+            counts.saveAsTextFile("hdfs://localhost:9000/CountResults_whereIsHadoop")
+            spark.stop()
+        
   println("Maximization of Likelihood Function")
   
   
@@ -240,7 +251,8 @@ object likelihood {
      
 
     //**************************** Test Fixture : End *************************
-
+  
+  
   //end main
   } 
  
