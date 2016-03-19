@@ -13,7 +13,29 @@ import breeze.optimize.{LBFGS}
 
 object tests {
   
-  //**************************** Spark HDFS Test *************************
+  //**************************** Spark HDFS [Test] *************************
+  
+  def hessPhiBound(x: String) = 
+  {
+    x match {
+          case "hessian" => test_hessian()
+          case "phi" => test_phi()
+          case "bound" => test_bound()
+    } 
+    
+          def test_hessian() = {
+            print("\n||||||||: Testing Hessian")
+          }
+          
+          def test_phi() = {
+            print("\n||||||||: Testing Phi")
+          }
+          
+          def test_bound() = {
+            print("\n||||||||: Testing Bound")
+          }
+  }
+  
   def sparkhdfs() = {
             import org.apache.spark.{SparkContext, SparkConf}
             import scala.math.random
@@ -27,8 +49,9 @@ object tests {
             counts.saveAsTextFile("hdfs://localhost:9000/CountResults_whereIsHadoop")
             spark.stop()
   }
-  //**************************** Likelihood Test *************************
-  def likelihoodtest() = {
+  
+  //**************************** Likelihood [Test] *************************
+  def llihood() = {
     println("Maximization of Likelihood Function") 
     
     //JSON import section * start
@@ -79,6 +102,7 @@ object tests {
       }
       jsongradNorm(74) = 1.0 / gradSum
       
+      //read inputs from JSON file
       val f  = jsonObject.get("inputs").asInstanceOf[HashMap[String, JSONObject]]
       println(f.keySet())
        

@@ -3,11 +3,11 @@ package optimizeLBFGS
 object STM {
   
   def main(args: Array[String]) 
-  { //start main
+  { 
     
-    tests.likelihoodtest()
+    tests.hessPhiBound("phi") //"phi", "bound"
     //tests.sparkhdfs()
+    //tests.llihood()
   
-    //end main
-  } 
+  }
 }
