@@ -5,7 +5,7 @@ object estep {
   import breeze.optimize.LBFGS
   import breeze.numerics.{log}
   import scala.collection.parallel.mutable.ParArray
-
+  import org.apache.spark.{SparkContext, SparkConf}
   //import org.apache.spark.mllib.linalg
 
   def evaluate(documents: List[DenseMatrix[Double]], betaIndex: DenseVector[Int], 
@@ -24,12 +24,17 @@ object estep {
     //initialization
     //val sigma_g =  DenseMatrix.zeros[Double](K,K)
     //cannot use single sigma_g, due to non-determinism of parallel summations
+    val conf = new SparkConf().setAppName("Spark Pi").setMaster("local")
+    val spark = new SparkContext(conf)
     
     //global
     val sigma_g  =  DenseVector.zeros[DenseMatrix[Double]](documents.length)
     for(i <- 0 until sigma_g.size) { 
       sigma_g(i) = DenseMatrix.zeros[Double](K,K) 
     }
+    //>>
+    //val accum = spark.accumulator[DenseVector[DenseMatrix[Double]]](sigma_g, "My Accumulator")
+    
     //global
     val beta_g  =  DenseVector.zeros[DenseMatrix[Double]](A)
     for(i <- 0 until beta_g.size) { 
