@@ -178,50 +178,20 @@ object tests {
       val jsonObject :JSONObject = (parser.parse(reader)).asInstanceOf[JSONObject]
       
       val outp = jsonObject.get("benchmark").asInstanceOf[HashMap[String, JSONObject]]
-      println(outp.keySet())
+      //println(outp.keySet())
       
       var uuu = outp.get("hpbcpp").asInstanceOf[JSONObject].get("eta").asInstanceOf[JSONObject].get("lambda").asInstanceOf[JSONArray]
       var ggg = outp.get("grad").asInstanceOf[JSONArray] 
       val lhoodJSON : Double = outp.get("lhood").asInstanceOf[JSONArray].get(0).toString.toDouble
-      
-      //--
-      var jsonoptiEtaSum = 1.0
-      
-      val jsonoptiEta : DenseVector[Double] = DenseVector.zeros[Double](uuu.size()) 
-      val jsonoptiEtaNorm : DenseVector[Double] = DenseVector.zeros[Double](uuu.size()+1)     
-
-       for(i <- 0 until uuu.size()) {
-        jsonoptiEta(i) = (uuu.get(i).asInstanceOf[JSONArray]).get(0).toString.toDouble
-        jsonoptiEtaSum = jsonoptiEtaSum + exp(jsonoptiEta(i))
-       }
-      
-      for(i <- 0 until uuu.size()) {
-        jsonoptiEtaNorm(i) = exp(jsonoptiEta(i)) / jsonoptiEtaSum
-      }
-      jsonoptiEtaNorm(74) = 1.0 / jsonoptiEtaSum
-      println("&&&&&&&&&&&&&&&&&&&&& opti eta json normalized &&&&&&&&&&&&&&&&&&&&&")
+       
+      /*println("&&&&&&&&&&&&&&&&&&&&& opti eta json normalized &&&&&&&&&&&&&&&&&&&&&")
       println(jsonoptiEtaNorm)
       println("&&&&&&&&&&&&&&&&&&&&& opti eta json normalized &&&&&&&&&&&&&&&&&&&&&")
-      //--
-      
-      val gradCheck : DenseVector[Double] = DenseVector.zeros[Double](ggg.size()) 
-      val jsongradNorm : DenseVector[Double] = DenseVector.zeros[Double](ggg.size()+1)     
-
-      var gradSum = 1.0
-      for(i <- 0 until ggg.size()) {
-        gradCheck(i) = (ggg.get(i).asInstanceOf[JSONArray]).get(0).toString.toDouble
-        gradSum = gradSum + exp(gradCheck(i))
-       }
- 
-      
-      for(i <- 0 until ggg.size()) {
-        jsongradNorm(i) = exp(gradCheck(i)) / gradSum
-      }
-      jsongradNorm(74) = 1.0 / gradSum
+      */ 
       
       //read inputs from JSON file
       val f  = jsonObject.get("inputs").asInstanceOf[HashMap[String, JSONObject]]
-      println(f.keySet())
+      //println(f.keySet())
        
       var temp = f.get("mu").asInstanceOf[JSONArray]     
       val mup : DenseVector[Double] = DenseVector.zeros[Double](temp.size())     
@@ -240,7 +210,7 @@ object tests {
       for(i <- 0 until temp3.size()) {
         initialEta(i) = temp3.get(i).toString().toDouble
       }
-      
+       
       var temp4 = f.get("beta").asInstanceOf[JSONArray]       
       val betap : DenseMatrix[Double] = DenseMatrix.zeros[Double](75,108) 
       for(i <- 0 until temp4.size()) {
@@ -265,7 +235,7 @@ object tests {
       val doc_ctp    = linspace(1.0, vacobSize, vacobSize) */
       
       val likeliHoodF  = likelihood.lhoodFunction(betap, doc_ctp, mup, siginvp)
-      val lbfgs = new LBFGS[DenseVector[Double]](tolerance = 1E-22, m=20) // maxIter = 1000000)
+      val lbfgs = new LBFGS[DenseVector[Double]](maxIter = 1000000,  m=20) //tolerance = 1E-22, )
       val newEta       = lbfgs.minimize(likeliHoodF, initialEta)
       
       /*println("-----initialEta data output-------")
@@ -279,8 +249,8 @@ object tests {
       println(likeliHoodF.gradientAt(newEta))*/
       
       val newGradient = likeliHoodF.gradientAt(newEta)
-       
-      //normalizing newGradient @ newEta
+      
+      //1 NORMALIZING newGradient @ newEta with this implementation
       var newSum = 1.0
       for(i <- 0 until newGradient.length) {
         newSum = newSum + exp(newGradient(i))
@@ -290,41 +260,58 @@ object tests {
       for(i <- 0 until newGradient.length) {
         newgradNorm(i) = exp(newGradient(i)) / newSum
       }
-      newgradNorm(74) = 1.00 / newSum
-      print(newgradNorm(74))
+      newgradNorm(74) = 1.00 / newSum 
       
-      //normalizing newEta
-      newSum = 1.0
-      for(i <- 0 until newEta.length) {
-        newSum = newSum + exp(newEta(i))
-      }
-      
-      val newEtaNorm : DenseVector[Double] = DenseVector.zeros[Double](newEta.length+1)     
-      for(i <- 0 until newEta.length) {
-        newEtaNorm(i) = exp(newEta(i)) / newSum
-      }
-      newEtaNorm(74) = 1.00 / newSum
-      
-      
-      /*println("normalized gradients*******************")
-      println("Gradient parameter at new optimal eta from Scala")
-      println(newGradient)
-      println("newEta normalized start")
-      println(newEtaNorm)
-      println("newEta normalized end")
+      //2 NORMALIZING JSON Gradient
+      val gradCheck : DenseVector[Double] = DenseVector.zeros[Double](ggg.size()) 
+      val jsongradNorm : DenseVector[Double] = DenseVector.zeros[Double](ggg.size()+1)     
 
-      println(newgradNorm)
-      println(newgradNorm.length)
+      var gradSum = 1.0
+      for(i <- 0 until ggg.size()) {
+        gradCheck(i) = (ggg.get(i).asInstanceOf[JSONArray]).get(0).toString.toDouble
+        gradSum = gradSum + exp(gradCheck(i))
+       } 
       
-      println("Gradient parameters at json output")
-      //println(gradCheck)
-      println(jsongradNorm.length)
-      println(jsongradNorm)
-      */
+      for(i <- 0 until ggg.size()) {
+        jsongradNorm(i) = exp(gradCheck(i)) / gradSum
+      }
+      jsongradNorm(74) = 1.0 / gradSum
       
+      //3 NORMALIZING JSON eta
+      var jsonoptiEtaSum = 1.0
+      val jsonoptiEta : DenseVector[Double] = DenseVector.zeros[Double](uuu.size()) 
+      val jsonoptiEtaNorm : DenseVector[Double] = DenseVector.zeros[Double](uuu.size()+1)     
+
+       for(i <- 0 until uuu.size()) {
+        jsonoptiEta(i) = (uuu.get(i).asInstanceOf[JSONArray]).get(0).toString.toDouble
+        jsonoptiEtaSum = jsonoptiEtaSum + exp(jsonoptiEta(i))
+       }
+      
+      for(i <- 0 until uuu.size()) {
+        jsonoptiEtaNorm(i) = exp(jsonoptiEta(i)) / jsonoptiEtaSum
+      }
+      jsonoptiEtaNorm(74) = 1.0 / jsonoptiEtaSum
+      
+      //4 NORMALIZING new calculated optimal eta
+      var newEtaSum = 1.0
+      val newEtaNorm : DenseVector[Double] = DenseVector.zeros[Double](newEta.length+1)     
+
+       for(i <- 0 until uuu.size()) {
+        newEtaSum = newEtaSum + exp(newEta(i))
+       }
+      
+      for(i <- 0 until uuu.size()) {
+        newEtaNorm(i) = exp(newEta(i)) / newEtaSum
+      }
+      newEtaNorm(74) = 1.0 / newEtaSum
+      
+      //println(sum(abs(newEta-jsonoptiEta)))
+      //println(sum(abs(gradCheck-newGradient)))
+      println("Eta sum of abs diff	: "+sum(abs((jsonoptiEtaNorm - newEtaNorm))))
       println("Gradient sum of abs diff	: "+sum(abs((jsongradNorm - newgradNorm))))
       println("Likelihood from Calculation: "+likeliHoodF.valueAt(newEta))
       println("Likelihood from JSON: "+lhoodJSON)
+      
       
       /*println("-----test data output-------")
       println(gradCheck)  
