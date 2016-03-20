@@ -8,7 +8,7 @@ import java.io.FileReader
 import java.util.HashMap
 
 import breeze.linalg.{DenseVector, DenseMatrix, sum}
-import breeze.numerics.{exp, log, sqrt}
+import breeze.numerics.{exp, log, sqrt, abs}
 import breeze.optimize.{LBFGS}
 
 object tests {
@@ -90,8 +90,8 @@ object tests {
             }
             
             //compare
-            print("\n"+"Bound Calculated		: "+ X._3) 
-            print("\n"+"Bound from JSON		: "+ bound_test)
+            //print("\n"+"Bound Calculated		: "+ X._3) 
+            print("\n"+"Diff of Bound JSON-Calculated		:"+ (X._3-bound_test))
             
             /*
             print("\n"+hessianJSON.size()+"x"+hessianJSON.get(0).asInstanceOf[JSONArray].size())
@@ -99,12 +99,12 @@ object tests {
             print("\n"+phi_calculated.rows +"x"+ phi_calculated.cols)
             print("\n"+hess_calculated.rows +"x"+ hess_calculated.cols) */
             
-            print("\n"+"Hessian sum of diff	: "+sum(hess_calculated - hess_test))
+            print("\n"+"Hessian sum of diff	: "+sum(abs(hess_calculated - hess_test)))
             
             /*print("\n"+sum(phi_calculated))
             print("\n"+sum(phi_test))*/
 
-            print("\n"+"Phi sum of diff		: "+sum(phi_calculated - phi_test))
+            print("\n"+"Phi sum of diff		: "+sum(abs(phi_calculated - phi_test)))
              
           }
       
@@ -157,7 +157,7 @@ object tests {
             import org.apache.spark.{SparkContext, SparkConf}
             import scala.math.random
       
-            val conf = new SparkConf().setAppName("Spark Pi").setMaster("local")
+            val conf  = new SparkConf().setAppName("Spark Pi").setMaster("local")
             val spark = new SparkContext(conf)
             val textFile = spark.textFile("hdfs://localhost:9000/whereIsHadoop.txt")
             val counts = textFile.flatMap(line => line.split(" "))
