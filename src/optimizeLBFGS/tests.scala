@@ -12,31 +12,139 @@ import breeze.numerics.{exp, log, sqrt}
 import breeze.optimize.{LBFGS}
 
 object tests {
+  var jsonObject   : JSONObject    = null 
+  var etaJSON, hessianJSON, phiJSON, boundJSON : JSONArray = null 
   
-  //**************************** Spark HDFS [Test] *************************
+  //inputs       
+  var mup : DenseVector[Double] = DenseVector.zeros[Double](74)   
+  var doc_ctp : DenseVector[Double] = DenseVector.zeros[Double](108) 
+  var initialEta : DenseVector[Double] = DenseVector.zeros[Double](74)   
+  var betap : DenseMatrix[Double] = DenseMatrix.zeros[Double](75,108) 
+  var siginvp : DenseMatrix[Double] = DenseMatrix.zeros[Double](74,74) 
+  var sigmaentropyp: Double = 0.0
   
-  def hessPhiBound(x: String) = 
+  //**************************** hessPhiBound [Test] *************************
+  
+  def test_hessPhiBound() = 
   {
-    x match {
-          case "hessian" => test_hessian()
-          case "phi" => test_phi()
-          case "bound" => test_bound()
-    } 
+    try {
+      //read input from JSON file
+      val parser : JSONParser = new JSONParser();
+      val reader : FileReader = new FileReader("/Users/aloksingh/Downloads/benchmark.JSON");
+      jsonObject              = (parser.parse(reader)).asInstanceOf[JSONObject]  
+      val outp = jsonObject.get("benchmark").asInstanceOf[HashMap[String, JSONObject]]
+      //println(outp.keySet())
+      
+      fillInputs()
+      
+      //outputs from JSON for verification
+      boundJSON = outp.get("hpbcpp").asInstanceOf[JSONObject].get("bound").asInstanceOf[JSONArray]
+      etaJSON   = outp.get("hpbcpp").asInstanceOf[JSONObject].get("eta").asInstanceOf[JSONObject].get("lambda").asInstanceOf[JSONArray]
+      hessianJSON = outp.get("hpbcpp").asInstanceOf[JSONObject].get("eta").asInstanceOf[JSONObject].get("nu").asInstanceOf[JSONArray]
+      phiJSON = outp.get("hpbcpp").asInstanceOf[JSONObject].get("phis").asInstanceOf[JSONArray]
+      
+    } catch {
+                  case e: Exception => println(e.getMessage)
+            }
+      
+       
+    test_all()
     
-          def test_hessian() = {
-            print("\n||||||||: Testing Hessian")
+          def test_all() = {
+            print("\n||||||||: Testing Bound") 
+   
+            //X : process using current implementation
+            val likeliHoodF  = likelihood.lhoodFunction(betap, doc_ctp, mup, siginvp)
+            val lbfgs = new LBFGS[DenseVector[Double]](tolerance = 1E-12, m=10) // maxIter = 1000000)
+            val newEta       = lbfgs.minimize(likeliHoodF, initialEta) 
+            
+            val jsonoptiEta : DenseVector[Double] = DenseVector.zeros[Double](etaJSON.size())
+            for(i <- 0 until etaJSON.size()) {
+                    jsonoptiEta(i) = (etaJSON.get(i).asInstanceOf[JSONArray]).get(0).toString.toDouble
+            }
+            
+            val X = hessPhiBound.evaluate(jsonoptiEta, betap, doc_ctp, mup, siginvp, sigmaentropyp)
+            
+            
+            //calculated values
+            val phi_calculated    = X._1
+            val hess_calculated   = X._2._2
+            val bound_calculated  = X._3
+
+            //verification values from JSON file
+            val bound_test : Double = boundJSON.get(0).toString.toDouble
+            val hess_test: DenseMatrix[Double] = DenseMatrix.zeros[Double](74,74) 
+            val phi_test: DenseMatrix[Double]  = DenseMatrix.zeros[Double](75,108)
+            
+            for(i <- 0 until hessianJSON.size()) {
+                  var ccc = hessianJSON.get(i).asInstanceOf[JSONArray]     
+                  for(j <- 0 until ccc.size()) {
+                    hess_test(i,j) = ccc.get(j).toString().toDouble
+                  }
+            }
+            
+            for(i <- 0 until phiJSON.size()) {
+                  var ccc = phiJSON.get(i).asInstanceOf[JSONArray]     
+                  for(j <- 0 until ccc.size()) {
+                    phi_test(i,j) = ccc.get(j).toString().toDouble
+                  }
+            }
+            
+            //compare
+            print("\n"+"Bound Calculated: "+ X._3) 
+            print("\n"+"Bound from JSON: "+ bound_test) 
+            print("\n"+hessianJSON.size()+"x"+hessianJSON.get(0).asInstanceOf[JSONArray].size())
+            print("\n"+phiJSON.size()+"x"+phiJSON.get(0).asInstanceOf[JSONArray].size())
+            
+          }
+     
+          
+          def fillInputs() = {     
+
+          //fill inputs from JSON file
+          val f  = jsonObject.get("inputs").asInstanceOf[HashMap[String, JSONObject]]
+          //println(f.keySet())
+           
+          var temp = f.get("mu").asInstanceOf[JSONArray] 
+           for(i <- 0 until temp.size()) {
+            mup(i) = temp.get(i).toString().toDouble
           }
           
-          def test_phi() = {
-            print("\n||||||||: Testing Phi")
+          var temp2 = f.get("doc_ct").asInstanceOf[JSONArray] 
+           for(i <- 0 until temp2.size()) {
+            doc_ctp(i) = temp2.get(i).toString().toDouble
           }
           
-          def test_bound() = {
-            print("\n||||||||: Testing Bound")
+          var temp3 = f.get("eta").asInstanceOf[JSONArray] 
+           for(i <- 0 until temp3.size()) {
+            initialEta(i) = temp3.get(i).toString().toDouble
           }
+          
+          var temp4 = f.get("beta").asInstanceOf[JSONArray]       
+            for(i <- 0 until temp4.size()) {
+                var ccc = temp4.get(i).asInstanceOf[JSONArray]     
+                for(j <- 0 until ccc.size()) {
+                  betap(i,j) = ccc.get(j).toString().toDouble
+                }
+          }
+                
+          var temp5 = f.get("siginv").asInstanceOf[JSONArray]       
+            for(i <- 0 until temp5.size()) {
+                var eee = temp5.get(i).asInstanceOf[JSONArray]     
+                for(j <- 0 until eee.size()) {
+                  siginvp(i,j) = eee.get(j).toString().toDouble
+                }
+          }
+              
+          var temp6 = f.get("sigmaentropy").asInstanceOf[JSONArray]       
+             sigmaentropyp = temp6.get(0).toString().toDouble
+                     
+          }//end fill inputs
   }
   
-  def sparkhdfs() = {
+  //**************************** Spark HDFS [Test] *************************
+
+  def test_sparkhdfs() = {
             import org.apache.spark.{SparkContext, SparkConf}
             import scala.math.random
       
@@ -51,7 +159,7 @@ object tests {
   }
   
   //**************************** Likelihood [Test] *************************
-  def llihood() = {
+  def test_likelihood() = {
     println("Maximization of Likelihood Function") 
     
     //JSON import section * start

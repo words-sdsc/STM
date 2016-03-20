@@ -5,9 +5,9 @@ object STM {
   def main(args: Array[String]) 
   { 
     
-    tests.hessPhiBound("phi") //"phi", "bound"
+    tests.test_hessPhiBound()
     //tests.sparkhdfs()
-    //tests.llihood()
+    //tests.test_likelihood()
   
   }
 }
