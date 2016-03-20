@@ -46,8 +46,7 @@ object tests {
     } catch {
                   case e: Exception => println(e.getMessage)
             }
-      
-       
+    
     test_all()
     
           def test_all() = {
@@ -64,7 +63,7 @@ object tests {
             }
             
             val X = hessPhiBound.evaluate(jsonoptiEta, betap, doc_ctp, mup, siginvp, sigmaentropyp)
-            
+            //print(jsonoptiEta)
             
             //calculated values
             val phi_calculated    = X._1
@@ -72,7 +71,7 @@ object tests {
             val bound_calculated  = X._3
 
             //verification values from JSON file
-            val bound_test : Double = boundJSON.get(0).toString.toDouble
+            val bound_test: Double = boundJSON.get(0).toString.toDouble
             val hess_test: DenseMatrix[Double] = DenseMatrix.zeros[Double](74,74) 
             val phi_test: DenseMatrix[Double]  = DenseMatrix.zeros[Double](75,108)
             
@@ -82,7 +81,7 @@ object tests {
                     hess_test(i,j) = ccc.get(j).toString().toDouble
                   }
             }
-            
+                        
             for(i <- 0 until phiJSON.size()) {
                   var ccc = phiJSON.get(i).asInstanceOf[JSONArray]     
                   for(j <- 0 until ccc.size()) {
@@ -91,14 +90,24 @@ object tests {
             }
             
             //compare
-            print("\n"+"Bound Calculated: "+ X._3) 
-            print("\n"+"Bound from JSON: "+ bound_test) 
+            print("\n"+"Bound Calculated		: "+ X._3) 
+            print("\n"+"Bound from JSON		: "+ bound_test)
+            
+            /*
             print("\n"+hessianJSON.size()+"x"+hessianJSON.get(0).asInstanceOf[JSONArray].size())
             print("\n"+phiJSON.size()+"x"+phiJSON.get(0).asInstanceOf[JSONArray].size())
+            print("\n"+phi_calculated.rows +"x"+ phi_calculated.cols)
+            print("\n"+hess_calculated.rows +"x"+ hess_calculated.cols) */
             
+            print("\n"+"Hessian sum of diff	: "+sum(hess_calculated - hess_test))
+            
+            /*print("\n"+sum(phi_calculated))
+            print("\n"+sum(phi_test))*/
+
+            print("\n"+"Phi sum of diff		: "+sum(phi_calculated - phi_test))
+             
           }
-     
-          
+      
           def fillInputs() = {     
 
           //fill inputs from JSON file
