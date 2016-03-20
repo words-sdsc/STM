@@ -30,7 +30,7 @@ object tests {
     try {
       //read input from JSON file
       val parser : JSONParser = new JSONParser();
-      val reader : FileReader = new FileReader("/Users/aloksingh/Downloads/benchmark.JSON");
+      val reader : FileReader = new FileReader("/Users/aloksingh/Downloads/benchmark2.JSON");
       jsonObject              = (parser.parse(reader)).asInstanceOf[JSONObject]  
       val outp = jsonObject.get("benchmark").asInstanceOf[HashMap[String, JSONObject]]
       //println(outp.keySet())
@@ -90,8 +90,8 @@ object tests {
             }
             
             //compare
-            //print("\n"+"Bound Calculated		: "+ X._3) 
-            print("\n"+"Diff of Bound JSON-Calculated		:"+ (X._3-bound_test))
+            print("\n"+"Bound Calculated		  :"+ X._3) 
+            print("\n"+"Bound from JSON		  :"+ bound_test)
             
             /*
             print("\n"+hessianJSON.size()+"x"+hessianJSON.get(0).asInstanceOf[JSONArray].size())
@@ -99,12 +99,12 @@ object tests {
             print("\n"+phi_calculated.rows +"x"+ phi_calculated.cols)
             print("\n"+hess_calculated.rows +"x"+ hess_calculated.cols) */
             
-            print("\n"+"Hessian sum of diff	: "+sum(abs(hess_calculated - hess_test)))
+            print("\n"+"Hessian sum of abs diff	: "+sum(abs(hess_calculated - hess_test)))
             
             /*print("\n"+sum(phi_calculated))
             print("\n"+sum(phi_test))*/
 
-            print("\n"+"Phi sum of diff		: "+sum(abs(phi_calculated - phi_test)))
+            print("\n"+"Phi sum of abs diff		: "+sum(abs(phi_calculated - phi_test)))
              
           }
       
@@ -174,7 +174,7 @@ object tests {
     //JSON import section * start
     try {
       val parser : JSONParser = new JSONParser();
-      val reader : FileReader = new FileReader("/Users/aloksingh/Downloads/benchmark.JSON");
+      val reader : FileReader = new FileReader("/Users/aloksingh/Downloads/benchmark2.JSON");
       val jsonObject :JSONObject = (parser.parse(reader)).asInstanceOf[JSONObject]
       
       val outp = jsonObject.get("benchmark").asInstanceOf[HashMap[String, JSONObject]]
@@ -182,7 +182,7 @@ object tests {
       
       var uuu = outp.get("hpbcpp").asInstanceOf[JSONObject].get("eta").asInstanceOf[JSONObject].get("lambda").asInstanceOf[JSONArray]
       var ggg = outp.get("grad").asInstanceOf[JSONArray] 
-      
+      val lhoodJSON : Double = outp.get("lhood").asInstanceOf[JSONArray].get(0).toString.toDouble
       
       //--
       var jsonoptiEtaSum = 1.0
@@ -265,7 +265,7 @@ object tests {
       val doc_ctp    = linspace(1.0, vacobSize, vacobSize) */
       
       val likeliHoodF  = likelihood.lhoodFunction(betap, doc_ctp, mup, siginvp)
-      val lbfgs = new LBFGS[DenseVector[Double]](tolerance = 1E-12, m=10) // maxIter = 1000000)
+      val lbfgs = new LBFGS[DenseVector[Double]](tolerance = 1E-22, m=20) // maxIter = 1000000)
       val newEta       = lbfgs.minimize(likeliHoodF, initialEta)
       
       /*println("-----initialEta data output-------")
@@ -291,7 +291,7 @@ object tests {
         newgradNorm(i) = exp(newGradient(i)) / newSum
       }
       newgradNorm(74) = 1.00 / newSum
-      
+      print(newgradNorm(74))
       
       //normalizing newEta
       newSum = 1.0
@@ -306,9 +306,9 @@ object tests {
       newEtaNorm(74) = 1.00 / newSum
       
       
-      println("normalized gradients*******************")
+      /*println("normalized gradients*******************")
       println("Gradient parameter at new optimal eta from Scala")
-      //println(newGradient)
+      println(newGradient)
       println("newEta normalized start")
       println(newEtaNorm)
       println("newEta normalized end")
@@ -320,11 +320,11 @@ object tests {
       //println(gradCheck)
       println(jsongradNorm.length)
       println(jsongradNorm)
+      */
       
-      println("\n\ndifference b/w gradient parameter*******************")
-      println(jsongradNorm - newgradNorm)
-      println(sum(jsongradNorm - newgradNorm))
-
+      println("Gradient sum of abs diff	: "+sum(abs((jsongradNorm - newgradNorm))))
+      println("Likelihood from Calculation: "+likeliHoodF.valueAt(newEta))
+      println("Likelihood from JSON: "+lhoodJSON)
       
       /*println("-----test data output-------")
       println(gradCheck)  
