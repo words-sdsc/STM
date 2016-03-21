@@ -6,7 +6,7 @@ object STM {
   { 
     
     //tests.test_hessPhiBound()
-    //tests.sparkhdfs()
+    //tests.test_sparkhdfs()
     tests.test_likelihood() 
   }
 }
