@@ -31,13 +31,16 @@ class STMModel {
                 docs.foreach 
                 {
                     case(id: Long, termCounts: Vector) =>
-                    // DD = set of results from STM for this one document
-                    val i = 1
+                      /* send this document for STM processing,
+                         DD = set of results from STM for this single document */
+                      val i = 1
+                    
                     
                     // update partition accumulators TP with DD
+                    
                 }
 
-                // return iterator (each tuple is set of accumulators from one partition)
+                // return iterator (each tuple is a set of accumulators from one partition)
                 Iterator((partition_accum1, partition_accum2))
         
       }//end mapPartitions
@@ -52,6 +55,7 @@ class STMModel {
     
     
     //unpersist broadcasted variables
+    
     
     this
     
