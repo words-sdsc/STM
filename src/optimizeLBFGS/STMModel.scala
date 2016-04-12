@@ -24,7 +24,7 @@ class STMModel {
     val spark  = new SparkContext(conf)
     val documentsRDD: RDD[(DenseMatrix[Double], Int)] = spark.parallelize(documents.zipWithIndex)
       
-    //get copy of global parameters
+    // [?] get copy of global parameters
     
 
     
@@ -36,7 +36,7 @@ class STMModel {
     val (siginv, sigmaentropy) = getSigma(sigma: DenseMatrix[Double])
     
     //broadcast any large data structures to each node if they are needed by every doc
-    
+    val betaBc = spark.broadcast(beta)
     
     //partition the set of documents
     val metricsFromPartitions: RDD[(DenseMatrix[Double], DenseVector[DenseMatrix[Double]], 
@@ -57,15 +57,15 @@ class STMModel {
                   case (doc: DenseMatrix[Double], indx: Int) =>  
                        
                     val wordIndices   = (doc(0, ::).t).data.map(_.toInt).toIndexedSeq //1st row of doc = indices of words
-                    val aspect = betaIndex(indx)
-                    val init   = lambdaOld(indx,::).t //matrix N x K-1, each row is a lambda for a doc
+                    val aspect  = betaIndex(indx)
+                    val init_   = lambdaOld(indx,::).t //matrix N x K-1, each row is a lambda for a doc
                     //if(updateMu)  //check if we need this
-                    val mu_j   = mu(::,indx) 
-                    val beta_j = beta(aspect)(::, wordIndices).toDenseMatrix
+                    val mu_     = mu(::,indx) 
+                    val beta_   = betaBc.value(aspect)(::, wordIndices).toDenseMatrix
                     
                     /* infer this document via STM,
                        DD = set of results from STM for this single document */
-                    val results = logisticnormal(init, mu_j, siginv, beta_j, doc(1,::).t, sigmaentropy)
+                    val results = logisticnormal(init_, mu_, siginv, beta_, doc(1,::).t, sigmaentropy)
                                                                               //doc(2nd row)=count of words
                     
                     // update partition accumulators TP with DD
@@ -81,16 +81,14 @@ class STMModel {
         
       }//end mapPartitions
     
-    /*each tuple in 'metricsFromPartitions' is from one partition
-      PP = aggregation of results from each partition in 'metricsFromPartitions'
-      */
+    // [?] PP = aggregation of results from each partition in 'metricsFromPartitions'
       
     
-    //update global parameters GG using these aggregates PP
+    // [?] update global parameters GG using these aggregates PP
     
     
     //unpersist broadcasted variables
-    
+    betaBc.unpersist()
     
     this
     
