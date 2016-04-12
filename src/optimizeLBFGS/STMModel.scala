@@ -8,7 +8,6 @@ import org.apache.spark.{SparkContext, SparkConf}
 import breeze.linalg.{Matrix, diag, inv, sum, det, cholesky}
 import breeze.numerics.{log}
  
-
 class STMModel {
   //GG = set of global parameters
   
@@ -24,7 +23,7 @@ class STMModel {
     val spark  = new SparkContext(conf)
     val documentsRDD: RDD[(DenseMatrix[Double], Int)] = spark.parallelize(documents.zipWithIndex)
       
-    // [?] get copy of global parameters
+    //get copy of global parameters
     
 
     
@@ -81,10 +80,10 @@ class STMModel {
         
       }//end mapPartitions
     
-    // [?] PP = aggregation of results from each partition in 'metricsFromPartitions'
+    //PP = aggregation of results from each partition in 'metricsFromPartitions'
       
     
-    // [?] update global parameters GG using these aggregates PP
+    //update global parameters GG using these aggregates PP
     
     
     //unpersist broadcasted variables
@@ -114,7 +113,7 @@ class STMModel {
     
       (siginv, sigmaentropy)
   }//end getSigma
-  
+
   
   /* *********************infer single doc ********************* */
   def logisticnormal(eta: DenseVector[Double], mu: DenseVector[Double], 
