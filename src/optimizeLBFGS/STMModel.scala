@@ -7,8 +7,8 @@ import breeze.optimize.LBFGS
 import org.apache.spark.{SparkContext, SparkConf}
 import breeze.linalg.{Matrix, diag, inv, sum, det, cholesky}
 import breeze.numerics.{log}
+ 
 
-// Update: - the 'estep' is implemented in this class
 class STMModel {
   //GG = set of global parameters
   
