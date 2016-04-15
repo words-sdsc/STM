@@ -5,7 +5,7 @@ import org.apache.spark.mllib.linalg.{Vector}
 import breeze.linalg.{DenseMatrix, DenseVector}
 import breeze.optimize.LBFGS
 import org.apache.spark.{SparkContext, SparkConf}
-import breeze.linalg.{Matrix, diag, inv, sum, det, cholesky}
+import breeze.linalg.{Matrix, diag, inv, sum, det, cholesky, zipValues}
 import breeze.numerics.{log}
  
 class STMModel {
@@ -21,16 +21,13 @@ class STMModel {
     //Spark
     val conf   = new SparkConf().setAppName("Spark Pi").setMaster("local")
     val spark  = new SparkContext(conf)
-    val documentsRDD: RDD[(DenseMatrix[Double], Int)] = spark.parallelize(documents.zipWithIndex)
+    val numPartitions = 10 //number of partitions
+    val documentsRDD: RDD[(DenseMatrix[Double], Int)] = spark.parallelize(documents.zipWithIndex, numPartitions)
       
     //get copy of global parameters
     
-
-    
-    //declare the constants
     val V = beta(1).cols
     val K = beta(1).rows
-    val N = documents.length
     val A = beta.length //several docs could have same beta, hence A and N could be different
     val (siginv, sigmaentropy) = getSigma(sigma: DenseMatrix[Double])
     
@@ -39,18 +36,21 @@ class STMModel {
     
     //partition the set of documents
     val metricsFromPartitions: RDD[(DenseMatrix[Double], DenseVector[DenseMatrix[Double]], 
-                                    DenseVector[Double], DenseMatrix[Double])] =   
+                                    List[Double], List[DenseVector[Double]] )] =   
       documentsRDD.mapPartitions 
       {
         docs => 
+                //declare the constants
+                val N = docs.length
                 
                 //TP = set of variables specific to this partition
                 val sigma_pt   =  DenseMatrix.zeros[Double](K,K) 
                 val beta_pt    =  DenseVector.zeros[DenseMatrix[Double]](A)  //List of Matrices
                 for(i <- 0 until beta_pt.size) { beta_pt(i) = DenseMatrix.zeros[Double](K,V) } 
-                val bound_pt   = DenseVector.zeros[Double](N)
-                val lambda_pt  = DenseMatrix.zeros[Double](K-1, N)  
+                var bound_pt   = List[Double]()                         //DenseVector.zeros[Double](N)
+                var lambda_pt  = List[DenseVector[Double]]()            //DenseMatrix.zeros[Double](K-1, N)  
                 //every COL is a lambda of len K-1, transpose it before returning 
+                
                 
                 docs.foreach { 
                   case (doc: DenseMatrix[Double], indx: Int) =>  
@@ -69,22 +69,30 @@ class STMModel {
                     
                     // update partition accumulators TP with DD
                     beta_pt(aspect)(::, wordIndices) += results._1.asInstanceOf[Matrix[Double]] //two docs can have same aspect
-                    lambda_pt(::, indx)     := results._2._1 //each COL is a lambda   
+                    lambda_pt = results._2._1 :: lambda_pt                                      //each COL is a lambda   
                     sigma_pt                += results._2._2
-                    bound_pt(indx)           = results._3
-
+                    bound_pt = results._3 :: bound_pt
                 }
-
+               
                 // return iterator (each tuple is a set of accumulators from one partition)
-                Iterator((sigma_pt, beta_pt, bound_pt, lambda_pt.t))
+                Iterator((sigma_pt, beta_pt, bound_pt, lambda_pt))
         
       }//end mapPartitions
     
     //PP = aggregation of results from each partition in 'metricsFromPartitions'
       
-    
-    //update global parameters GG using these aggregates PP
-    
+      val collect_sigma : DenseMatrix[Double] = metricsFromPartitions.map(_._1).treeAggregate(DenseMatrix.zeros[Double](K,K))(_ += _, _ += _)
+      val collect_lambda: DenseMatrix[Double] = DenseMatrix.vertcat(metricsFromPartitions.map(_._4).flatMap(list => list).collect().map(_.toDenseMatrix): _*)
+      val collect_bound : DenseVector[Double] = DenseVector(metricsFromPartitions.map(_._3).reduce{(prev, item) => prev ++ item}.toArray) 
+      val collect_beta  : DenseVector[DenseMatrix[Double]] = metricsFromPartitions.map(_._2).reduce((vec1,vec2) => vec1 :+ vec2)
+      
+      //update global parameters GG using these aggregates PP
+      
+        //update_mu(lambda=lambda, mode=settings$gamma$mode, covar=settings$covariates$X, settings$gamma$enet)
+          
+        //update_sigma(nu=sigma.ss, lambda=lambda, mu=mu$mu, sigprior=settings$sigma$prior)
+          
+        //update_beta(beta.ss, beta$kappa, settings)
     
     //unpersist broadcasted variables
     betaBc.unpersist()
