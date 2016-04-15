@@ -35,7 +35,7 @@ class STMModel {
     val betaBc = spark.broadcast(beta)
     
     //partition the set of documents
-    val metricsFromPartitions: RDD[(DenseMatrix[Double], DenseVector[DenseMatrix[Double]], 
+    val partitionsMetrics: RDD[(DenseMatrix[Double], DenseVector[DenseMatrix[Double]], 
                                     List[Double], List[DenseVector[Double]] )] =   
       documentsRDD.mapPartitions 
       {
@@ -81,10 +81,10 @@ class STMModel {
     
     //PP = aggregation of results from each partition in 'metricsFromPartitions'
       
-      val collect_sigma : DenseMatrix[Double] = metricsFromPartitions.map(_._1).treeAggregate(DenseMatrix.zeros[Double](K,K))(_ += _, _ += _)
-      val collect_lambda: DenseMatrix[Double] = DenseMatrix.vertcat(metricsFromPartitions.map(_._4).flatMap(list => list).collect().map(_.toDenseMatrix): _*)
-      val collect_bound : DenseVector[Double] = DenseVector(metricsFromPartitions.map(_._3).reduce{(prev, item) => prev ++ item}.toArray) 
-      val collect_beta  : DenseVector[DenseMatrix[Double]] = metricsFromPartitions.map(_._2).reduce((vec1,vec2) => vec1 :+ vec2)
+      val collect_sigma : DenseMatrix[Double] = partitionsMetrics.map(_._1).treeAggregate(DenseMatrix.zeros[Double](K,K))(_ += _, _ += _)
+      val collect_lambda: DenseMatrix[Double] = DenseMatrix.vertcat(partitionsMetrics.map(_._4).flatMap(list => list).collect().map(_.toDenseMatrix): _*)
+      val collect_bound : DenseVector[Double] = DenseVector(partitionsMetrics.map(_._3).reduce{(prev, item) => prev ++ item}.toArray) 
+      val collect_beta  : DenseVector[DenseMatrix[Double]] = partitionsMetrics.map(_._2).reduce((vec1,vec2) => vec1 :+ vec2)
       
       //update global parameters GG using these aggregates PP
       
