@@ -14,7 +14,13 @@ class STMModel {
   var mu_g    : Tuple2[DenseMatrix[Double], DenseMatrix[Double]] = null
   var sigma_g : DenseMatrix[Double] = null
   
-  /* ********************* run STM over a set of documents ********************* */
+  
+  /*[function]********************* initialize the STM model **********************/
+  def initialize() = {
+    
+  }
+  
+  /*[function]********************* run STM over a set of documents **********************/
   def runSTM(documents: List[DenseMatrix[Double]], betaIndex: DenseVector[Int], 
       updateMu: Boolean, beta: DenseVector[DenseMatrix[Double]], lambdaOld: DenseMatrix[Double],
       mu: DenseMatrix[Double], sigma: DenseMatrix[Double],
@@ -91,12 +97,12 @@ class STMModel {
       //update global parameters GG using these aggregates PP
       
         val covar_dummy : DenseMatrix[Double] = null                   // [ ? covar ]
-        mu_g     = mStep.update_mu(collect_lambda, covar_dummy)
+        this.mu_g     = mStep.update_mu(collect_lambda, covar_dummy)
         
         val sigprior_dummy : Double = 0.5                              // [ ? is this a double]
-        sigma_g  = mStep.update_sigma(collect_sigma, collect_lambda, mu_g._1, sigprior_dummy)
+        this.sigma_g  = mStep.update_sigma(collect_sigma, collect_lambda, mu_g._1, sigprior_dummy)
         
-        beta_g   = mStep.update_beta(collect_beta)
+        this.beta_g   = mStep.update_beta(collect_beta)
         
     //unpersist broadcasted variables
     betaBc.unpersist()
@@ -105,7 +111,7 @@ class STMModel {
     
   } //end runSTM
   
-  /* ******Input:sigma*********Output:siginverse, sigmaentropy ********************* */
+  /*[function]********************* Input:sigma, Output:siginverse, sigmaentropy **********************/
   def valuesFromSigma(sigma: DenseMatrix[Double]) : Tuple2[DenseMatrix[Double], Double] = {
       //pre-processing of common components
       var sigobj       = DenseMatrix.zeros[Double](1,1)
@@ -125,7 +131,7 @@ class STMModel {
       (siginv, sigmaentropy)
   }//end valuesFromSigma
   
-  /* *********************infer single doc ********************* */
+  /*[function]********************* infer single doc **********************/
   def logisticnormal(eta: DenseVector[Double], mu: DenseVector[Double], 
         siginv: DenseMatrix[Double], beta: DenseMatrix[Double], doc_ct: DenseVector[Double], 
         sigmaentropy: Double): 
