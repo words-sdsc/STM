@@ -10,9 +10,10 @@ import breeze.numerics.{log, abs}
  
 class STMModel {
   //GG = set of global parameters
-  var beta_g : DenseMatrix[Double] = null
-  var mu_g   : Tuple2[DenseMatrix[Double], DenseMatrix[Double]] = null
-    
+  var beta_g  : DenseMatrix[Double] = null
+  var mu_g    : Tuple2[DenseMatrix[Double], DenseMatrix[Double]] = null
+  var sigma_g : DenseMatrix[Double] = null
+  
   /* ********************* run STM over a set of documents ********************* */
   def runSTM(documents: List[DenseMatrix[Double]], betaIndex: DenseVector[Int], 
       updateMu: Boolean, beta: DenseVector[DenseMatrix[Double]], lambdaOld: DenseMatrix[Double],
@@ -30,7 +31,7 @@ class STMModel {
     val V = beta(1).cols
     val K = beta(1).rows
     val A = beta.length //several docs could have same beta, hence A and N could be different
-    val (siginv, sigmaentropy) = getSigma(sigma: DenseMatrix[Double])
+    val (siginv, sigmaentropy) = valuesFromSigma(sigma: DenseMatrix[Double])
     
     //broadcast any large data structures to each node if they are needed by every doc
     val betaBc = spark.broadcast(beta)
@@ -89,13 +90,12 @@ class STMModel {
       
       //update global parameters GG using these aggregates PP
       
-        //update_mu(lambda=lambda, mode=settings$gamma$mode, covar=settings$covariates$X, settings$gamma$enet)
-        val dummyCoVar : DenseMatrix[Double] = null
-        mu_g = update_mu(collect_lambda, dummyCoVar)
+        val covar_dummy : DenseMatrix[Double] = null                   // [ ? covar ]
+        mu_g = update_mu(collect_lambda, covar_dummy)
         
-        //update_sigma(nu=sigma.ss, lambda=lambda, mu=mu$mu, sigprior=settings$sigma$prior)
-          
-        //update_beta(beta.ss, beta$kappa, settings)
+        val sigprior_dummy : Double = 0.5                              // [ ? is this a double]
+        sigma_g = update_sigma(collect_sigma, collect_lambda, mu_g._1, sigprior_dummy)
+        
         beta_g = update_beta(collect_beta)
         
     //unpersist broadcasted variables
@@ -105,8 +105,13 @@ class STMModel {
     
   } //end runSTM
   
-    def update_sigma() = {
-       
+    def update_sigma(nu:DenseMatrix[Double],lambda:DenseMatrix[Double],
+        mu:DenseMatrix[Double],sigprior: Double) :DenseMatrix[Double] = {
+      val M = lambda - mu.t
+      val covariance = M.t * M
+      var sigma = (covariance+nu) / (1.0*lambda.rows)
+      sigma = diag(diag(sigma))*sigprior + sigma * (1-sigprior)
+      sigma
     }
      
     //***  used by update_mu() ***f() = Variational Linear Regression with a Half-Cauchy hyperprior 
@@ -114,7 +119,7 @@ class STMModel {
       //b0=1, d0=1 taken out of function signature and replaced with constant
       val Xcorr  = X.t * X
       val XYcorr = X.t * Y
-      val an = (1.0 + X.rows)/2
+      val an = (1.0 + X.rows)/2.0
       val D  = X.cols
       val N  = X.rows
       val cn = X.cols
@@ -157,11 +162,12 @@ class STMModel {
     }
      
     def update_beta(betaList : DenseVector[DenseMatrix[Double]]) : DenseMatrix[Double] = {
-       betaList.foldLeft(DenseMatrix.zeros[Double](betaList(0).rows, betaList(0).cols))(_ + _)
+       val B = betaList.foldLeft(DenseMatrix.zeros[Double](betaList(0).rows, betaList(0).cols))(_ + _)
+       B(*, ::).map{ row => row / sum(row) } //row normalized
     }
   
-  /* *********************returns siginverse, sigmaentropy ********************* */
-  def getSigma(sigma: DenseMatrix[Double]) : Tuple2[DenseMatrix[Double], Double] = {
+  /* ******Input:sigma*********Output:siginverse, sigmaentropy ********************* */
+  def valuesFromSigma(sigma: DenseMatrix[Double]) : Tuple2[DenseMatrix[Double], Double] = {
       //pre-processing of common components
       var sigobj       = DenseMatrix.zeros[Double](1,1)
       var sigmaentropy = 0.0
@@ -178,7 +184,7 @@ class STMModel {
            }//end catch
     
       (siginv, sigmaentropy)
-  }//end getSigma
+  }//end valuesFromSigma
 
   
   /* *********************infer single doc ********************* */
