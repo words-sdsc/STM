@@ -20,6 +20,7 @@ class STMModel {
     
   }
   
+  
   /*[function]********************* run STM over a set of documents **********************/
   def runSTM(documents: List[DenseMatrix[Double]], betaIndex: DenseVector[Int], 
       updateMu: Boolean, beta: DenseVector[DenseMatrix[Double]], lambdaOld: DenseMatrix[Double],
@@ -111,6 +112,7 @@ class STMModel {
     
   } //end runSTM
   
+  
   /*[function]********************* Input:sigma, Output:siginverse, sigmaentropy **********************/
   def valuesFromSigma(sigma: DenseMatrix[Double]) : Tuple2[DenseMatrix[Double], Double] = {
       //pre-processing of common components
@@ -131,6 +133,7 @@ class STMModel {
       (siginv, sigmaentropy)
   }//end valuesFromSigma
   
+  
   /*[function]********************* infer single doc **********************/
   def logisticnormal(eta: DenseVector[Double], mu: DenseVector[Double], 
         siginv: DenseMatrix[Double], beta: DenseMatrix[Double], doc_ct: DenseVector[Double], 
@@ -146,4 +149,5 @@ class STMModel {
       
       hessPhiBound.evaluate(newEta, beta, doc_ct, mu, siginv, sigmaentropy )
   }
+  
 }
