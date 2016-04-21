@@ -1,6 +1,6 @@
-package optimizeLBFGS
+package sparkSTM
 
-object STM {
+object start {
   
   def main(args: Array[String]) 
   { 

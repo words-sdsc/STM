@@ -1,14 +1,12 @@
-package optimizeLBFGS
+package sparkSTM
 
 import org.json.simple.parser.JSONParser
-import org.json.simple.JSONArray;
-import org.json.simple.JSONObject;
-import org.json.simple.parser.ParseException;
+import org.json.simple.JSONArray
+import org.json.simple.JSONObject
 import java.io.FileReader
 import java.util.HashMap
-
 import breeze.linalg.{DenseVector, DenseMatrix, sum}
-import breeze.numerics.{exp, log, sqrt, abs}
+import breeze.numerics.abs
 import breeze.optimize.{LBFGS}
 
 object tests {

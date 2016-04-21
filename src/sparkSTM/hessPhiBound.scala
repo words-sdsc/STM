@@ -1,4 +1,17 @@
-package optimizeLBFGS
+package sparkSTM
+
+import breeze.linalg.DenseMatrix
+import breeze.linalg.DenseVector
+import breeze.linalg.cholesky
+import breeze.linalg.diag
+import breeze.linalg.inv
+import breeze.linalg.min
+import breeze.linalg.sum
+import breeze.linalg.upperTriangular
+import breeze.numerics.abs
+import breeze.numerics.exp
+import breeze.numerics.log
+import breeze.numerics.sqrt
 
 object hessPhiBound 
 {

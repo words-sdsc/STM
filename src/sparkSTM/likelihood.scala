@@ -1,8 +1,8 @@
-package optimizeLBFGS 
+package sparkSTM 
 
-import breeze.linalg._ //{DenseVector, DenseMatrix, sum}
-import breeze.numerics.{exp, log, sqrt}
-import breeze.optimize.{LBFGS, DiffFunction}
+import breeze.linalg._
+import breeze.numerics.{exp, log}
+import breeze.optimize.DiffFunction
 
 object likelihood { 
   
