@@ -17,7 +17,12 @@ class STMModel {
   
   /*[function]********************* initialize the STM model **********************/
   def initialize() = {
-    
+    val settings = new Configuration()
+    println("dim before :" + settings.dim("K"))
+    settings.dim  += ("K" -> 10.0)
+    println("dim after :" + settings.dim("K"))
+    println("alpha :" + settings.init("alpha"))
+
   }
   
   

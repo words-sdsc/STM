@@ -7,6 +7,10 @@ object start {
     
     //tests.test_hessPhiBound()
     //tests.test_sparkhdfs()
-    tests.test_likelihood() 
+    //tests.test_likelihood() 
+ 
+    val model = new STMModel()
+    model.initialize()
+  
   }
 }
