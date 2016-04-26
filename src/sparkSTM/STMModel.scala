@@ -16,15 +16,25 @@ class STMModel {
   
   
   /*[function]********************* initialize the STM model **********************/
-  def initialize() = {
-    val settings = new Configuration()
-    println("dim before :" + settings.dim("K"))
-    settings.dim  += ("K" -> 10.0)
-    println("dim after :" + settings.dim("K"))
-    println("alpha :" + settings.init("alpha"))
+  def initialize(documents: List[DenseMatrix[Double]], settings: Configuration) = {
+     println("Initializing the STM model...")
+     
+     settings.dim  += ("K" -> 10.0) 
+     
+     //(1) Prep the Gram matrix
+     
+     //(2) anchor words
+     
+     //(3) recoverKL
+     
+     //(4) generate other parameters
 
+     
   }
   
+  def kappa_init() = {
+    
+  }
   
   /*[function]********************* run STM over a set of documents **********************/
   def runSTM(documents: List[DenseMatrix[Double]], betaIndex: DenseVector[Int], 
