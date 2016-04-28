@@ -33,5 +33,6 @@
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
 	<classpathentry kind="lib" path="/Users/aloksingh/Downloads/json-simple-1.1.1.jar"/>
 	<classpathentry kind="lib" path="/usr/local/Cellar/apache-spark/1.6.0/libexec/lib/spark-assembly-1.6.0-hadoop2.6.0.jar"/>
+	<classpathentry kind="lib" path="/Users/aloksingh/Desktop/eclipsev2/jars/la4j-0.6.0.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

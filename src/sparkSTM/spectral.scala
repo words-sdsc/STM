@@ -1,9 +1,61 @@
 package sparkSTM
 
+import org.la4j.matrix.sparse.{CCSMatrix => SparseMatrix}
+import breeze.linalg.{DenseMatrix, DenseVector} //Matrix, diag, inv, sum, det, cholesky}
+
 object spectral {
   
-  def gram() = {
+  def gram(mat: SparseMatrix) : DenseMatrix[Double] = {
     
+    DenseMatrix.rand[Double](2, 2) //dummy
+  }
+  
+  def docsToSparseMatrix(documents: List[DenseMatrix[Double]]) : SparseMatrix = {    
+     val docsijv : Tuple3[Array[Int], Array[Int], Array[Double]] = null // get ijv from documents
+     // docsijv = (Array[Int] colPtrs, Array[Int] rowIndices, Array[Int] values)
+     val numRows = 100
+     val numCols = 100
+     
+     //rows = documents, cols = word indices, values = counts
+     //int rows, int columns, int cardinality, double[] values, int[] rowIndices, int[] columnPointers
+     new SparseMatrix(numRows, numCols)   
+  }
+  
+  def colSums(mat : SparseMatrix) : DenseVector[Double] = {
+            //val iter = mat.iteratorOrNonZeroColumns()
+            val colSum = DenseVector.zeros[Double](mat.columns())
+            var j =0
+            while (j < mat.columns()) {
+               //val i = iter.next()
+               colSum(j) = mat.getColumn(j).sum()
+               j=j+1
+            }
+     colSum
+  }
+  
+  def rowSums(mat : SparseMatrix) : DenseVector[Double] = {
+            val rowSum = DenseVector.zeros[Double](mat.rows())
+            var i = 0
+            while (i < mat.rows()) { 
+              rowSum(i) = mat.getRow(i).sum()
+              i=i+1
+            }
+      rowSum
+  }
+  
+  def whichZeros(vec : DenseVector[Double]) : Seq[Int] = {
+            var zeroIndices = List[Int]()
+            val iter = vec.foreachPair( (i, v)  => {if(v==0) { zeroIndices = i :: zeroIndices } } ) 
+            zeroIndices
+  }
+  
+  def dropelements(vec: DenseVector[Double], which: Seq[Int]) : DenseVector[Double] = {
+           val keep : List[Int] = (0 to vec.length toList) diff which.toList
+           var L  = List[Double]()
+           for ( i <- keep.reverse ) {
+             L = vec(i) :: L 
+           }
+           DenseVector(L.toArray)      
   }
   
   def gram_rp() = {

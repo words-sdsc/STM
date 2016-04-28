@@ -1,11 +1,14 @@
 package sparkSTM
 
 import org.apache.spark.rdd.RDD
-import breeze.linalg.{DenseMatrix, DenseVector, Matrix, diag, inv, sum, det, cholesky}
+import org.la4j.matrix.sparse.{CCSMatrix => SparseMatrix}
+import breeze.linalg.{Axis, DenseMatrix, DenseVector, Matrix, diag, inv, sum, det, cholesky, all, *}
 import breeze.optimize.LBFGS
 import org.apache.spark.{SparkContext, SparkConf}
 import breeze.numerics.log
-import scala.Iterator
+import scala.{Iterator=>ScalaIterator}
+import java.util.Iterator
+import scala.collection.mutable.ArrayBuffer
 
  
 class STMModel {
@@ -17,17 +20,55 @@ class STMModel {
   
   /*[function]********************* initialize the STM model **********************/
   def initialize(documents: List[DenseMatrix[Double]], settings: Configuration) = {
-     println("Initializing the STM model...")
+     println("Initializing the STM model (Spectral mode) ...")
      
-     settings.dim  += ("K" -> 10.0) 
+     val K : Int = settings.dim("K")
+     val V : Int = settings.dim("V")
      
-     //(1) Prep the Gram matrix
+     //**************************ıllıllı ıllıllı**************************
+     //{•------» (1) Prep the Gram matrix «------•}
+
+           if(K >= V) {
+             println("Error: Topics >= Words in vocab")
+             System.exit(1)
+           }
+
+     val mat : SparseMatrix = spectral.docsToSparseMatrix(documents)
+     var wprob : DenseVector[Double] = spectral.colSums(mat) 
+     wprob /= sum(wprob)
+     var Q : DenseMatrix[Double] = spectral.gram(mat)
+     var Qsums : DenseVector[Double] = sum(Q(*, ::)) //sum of each row
      
-     //(2) anchor words
+     if(!all(Qsums)) {
+       //there are some zeros
+       val which = spectral.whichZeros(Qsums)
+       Q = Q.delete(which, Axis._0)
+       Q = Q.delete(which, Axis._1)
+       Qsums = spectral.dropelements(Qsums, which)
+       wprob = spectral.dropelements(wprob, which)
+     } 
+     //divide every col by row sum
+     Q = Q(::,*) :/ Qsums
+     //**************************ıllıllı ıllıllı**************************
      
-     //(3) recoverKL
      
-     //(4) generate other parameters
+     
+     //**************************ıllıllı ıllıllı**************************
+     //{•------» (2) anchor words «------•}
+     //**************************ıllıllı ıllıllı**************************
+     
+     
+     
+     
+     //**************************ıllıllı ıllıllı**************************
+     //{•------» (3) recoverKL «------•}
+     //**************************ıllıllı ıllıllı**************************
+     
+     
+     
+     //**************************ıllıllı ıllıllı**************************
+     //{•------» (4) generate other parameters «------•}
+     //**************************ıllıllı ıllıllı**************************
 
      
   }
@@ -99,7 +140,7 @@ class STMModel {
                 }
                
                 // return iterator (each tuple is a set of accumulators from one partition)
-                Iterator((sigma_pt, beta_pt, bound_pt, lambda_pt))
+                ScalaIterator((sigma_pt, beta_pt, bound_pt, lambda_pt))
         
       }//end mapPartitions
     
