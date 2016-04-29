@@ -1,7 +1,7 @@
 package sparkSTM
 
 import org.la4j.matrix.sparse.{CCSMatrix => SparseMatrix}
-import breeze.linalg.{DenseMatrix, DenseVector} //Matrix, diag, inv, sum, det, cholesky}
+import breeze.linalg.{DenseMatrix, DenseVector, sum, *} //Matrix, diag, inv, sum, det, cholesky}
 
 object spectral {
   
@@ -58,6 +58,14 @@ object spectral {
            DenseVector(L.toArray)      
   }
   
+  def refillZeros(K:Int, V:Int, beta0:DenseMatrix[Double], keep: Seq[Int], whichZeros: Seq[Int]) : DenseMatrix[Double] = {
+       val betaNew = DenseMatrix.zeros[Double](K, V)
+       betaNew(::, keep)       := beta0
+       betaNew(::, whichZeros) := 5.960465E-8 //reference: https://issues.scala-lang.org/browse/SI-3791
+       //divide every col by denominator=row sums
+       betaNew(::,*) :/ sum(betaNew(*, ::))
+ }
+  
   def gram_rp() = {
     
   }
@@ -67,8 +75,10 @@ object spectral {
     DenseVector[Int](0)
   }
   
-  def recoverL2() = {
+  def recoverL2(Q : DenseMatrix[Double], anchor : DenseVector[Int], 
+      wprob : DenseVector[Double], verbose : Boolean) : DenseMatrix[Double] = {
     
+    DenseMatrix.zeros[Double](2,2)
   }
   
   def expgrad() = {

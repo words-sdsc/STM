@@ -1,12 +1,13 @@
 package sparkSTM
 
+
 import org.apache.spark.rdd.RDD
 import org.la4j.matrix.sparse.{CCSMatrix => SparseMatrix}
 import breeze.linalg.{Axis, DenseMatrix, DenseVector, Matrix, diag, inv, sum, det, cholesky, all, *}
 import breeze.optimize.LBFGS
 import org.apache.spark.{SparkContext, SparkConf}
 import breeze.numerics.log
-import scala.{Iterator=>ScalaIterator}
+import scala.{Iterator=>ScalaIterator, Double}
 import java.util.Iterator
 import scala.collection.mutable.ArrayBuffer
 
@@ -40,15 +41,17 @@ class STMModel {
      wprob /= sum(wprob)
      var Q : DenseMatrix[Double] = spectral.gram(mat)
      var Qsums : DenseVector[Double] = sum(Q(*, ::)) //sum of each row
-     var keep: List[Int] = null
+     var keep: Seq[Int] = null
+     var whichzero: Seq[Int] = null
+     
      if(!all(Qsums)) {
        //there are some zeros
-       val which = spectral.whichZeros(Qsums)
-       keep = (0 to Qsums.length-1 toList) diff which.toList
-       Q = Q.delete(which, Axis._0)
-       Q = Q.delete(which, Axis._1)
-       Qsums = spectral.dropelements(Qsums, which)
-       wprob = spectral.dropelements(wprob, which)
+       whichzero = spectral.whichZeros(Qsums) //which indices have zero in the input vector
+       keep = (0 to Qsums.length-1 toList) diff whichzero.toList
+       Q = Q.delete(whichzero, Axis._0)
+       Q = Q.delete(whichzero, Axis._1)
+       Qsums = spectral.dropelements(Qsums, whichzero)
+       wprob = spectral.dropelements(wprob, whichzero)
      } 
      //divide every col by row sum
      Q = Q(::,*) :/ Qsums
@@ -70,8 +73,12 @@ class STMModel {
      //**************************ıllıllı ıllıllı**************************
      //{•------» (3) recoverKL «------•}
      //**************************ıllıllı ıllıllı**************************
+     if(verbose) println("Recovering Initialization ")
+     var beta0 = spectral.recoverL2(Q, anchor, wprob, verbose) //[?] $A
      
-     
+     if(keep != null) { 
+       beta0 = spectral.refillZeros(K, V, beta0, keep, whichzero)
+     }
      
      //**************************ıllıllı ıllıllı**************************
      //{•------» (4) generate other parameters «------•}
@@ -81,7 +88,6 @@ class STMModel {
      val lambda = DenseMatrix.zeros[Double](N, K-1)
      if(verbose) println("Initialization complete")
      
-     val beta0 = DenseMatrix.zeros[Double](2,2) // dummy (comes from recoverL2)
      var beta : List[DenseMatrix[Double]] = List(beta0)
      for (i <- 1 to A-1) {
        beta = beta0 :: beta
