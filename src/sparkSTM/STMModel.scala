@@ -22,26 +22,29 @@ class STMModel {
   def initialize(documents: List[DenseMatrix[Double]], settings: Configuration) = {
      println("Initializing the STM model (Spectral mode) ...")
      
-     val K : Int = settings.dim("K")
+     var K : Int = settings.dim("K")
      val V : Int = settings.dim("V")
+     val N : Int = settings.dim("N")
+     val A : Int = settings.dim("A")
+     val verbose : Boolean = settings.init$verbose
      
-     //**************************ıllıllı ıllıllı**************************
-     //{•------» (1) Prep the Gram matrix «------•}
-
            if(K >= V) {
              println("Error: Topics >= Words in vocab")
              System.exit(1)
            }
-
+     //**************************ıllıllı ıllıllı**************************
+     //{•------» (1) Prep the Gram matrix «------•}
+     //**************************ıllıllı ıllıllı**************************
      val mat : SparseMatrix = spectral.docsToSparseMatrix(documents)
      var wprob : DenseVector[Double] = spectral.colSums(mat) 
      wprob /= sum(wprob)
      var Q : DenseMatrix[Double] = spectral.gram(mat)
      var Qsums : DenseVector[Double] = sum(Q(*, ::)) //sum of each row
-     
+     var keep: List[Int] = null
      if(!all(Qsums)) {
        //there are some zeros
        val which = spectral.whichZeros(Qsums)
+       keep = (0 to Qsums.length-1 toList) diff which.toList
        Q = Q.delete(which, Axis._0)
        Q = Q.delete(which, Axis._1)
        Qsums = spectral.dropelements(Qsums, which)
@@ -49,15 +52,19 @@ class STMModel {
      } 
      //divide every col by row sum
      Q = Q(::,*) :/ Qsums
-     //**************************ıllıllı ıllıllı**************************
      
      
-     
-     //**************************ıllıllı ıllıllı**************************
+     //**************************ıllıllı ıllıllı************************** 
      //{•------» (2) anchor words «------•}
-     //**************************ıllıllı ıllıllı**************************
-     
-     
+     //**************************ıllıllı ıllıllı************************** 
+     var anchor : DenseVector[Int] = null
+     if(verbose) println("Finding anchor words...")
+     if(K!=0) {
+        anchor = spectral.fastAnchor(Q, K, verbose)
+     } else {
+        anchor = spectral.tsneAnchor(Q)
+        K = anchor.length
+     }
      
      
      //**************************ıllıllı ıllıllı**************************
@@ -69,8 +76,18 @@ class STMModel {
      //**************************ıllıllı ıllıllı**************************
      //{•------» (4) generate other parameters «------•}
      //**************************ıllıllı ıllıllı**************************
-
+     val mu = DenseMatrix.zeros[Double](K-1, 1)
+     val sigma = diag(DenseVector.fill(K-1){20.0})
+     val lambda = DenseMatrix.zeros[Double](N, K-1)
+     if(verbose) println("Initialization complete")
      
+     val beta0 = DenseMatrix.zeros[Double](2,2) // dummy (comes from recoverL2)
+     var beta : List[DenseMatrix[Double]] = List(beta0)
+     for (i <- 1 to A-1) {
+       beta = beta0 :: beta
+     }
+     
+     val model = (mu, sigma, beta, lambda)
   }
   
   def kappa_init() = {

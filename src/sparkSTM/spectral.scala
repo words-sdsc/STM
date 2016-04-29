@@ -50,7 +50,7 @@ object spectral {
   }
   
   def dropelements(vec: DenseVector[Double], which: Seq[Int]) : DenseVector[Double] = {
-           val keep : List[Int] = (0 to vec.length toList) diff which.toList
+           val keep : List[Int] = (0 to vec.length-1 toList) diff which.toList
            var L  = List[Double]()
            for ( i <- keep.reverse ) {
              L = vec(i) :: L 
@@ -62,8 +62,9 @@ object spectral {
     
   }
   
-  def fastAnchor() = {
+  def fastAnchor(Q: DenseMatrix[Double], K: Int, verbose: Boolean): DenseVector[Int] = {
     
+    DenseVector[Int](0)
   }
   
   def recoverL2() = {
@@ -78,8 +79,9 @@ object spectral {
     
   }
   
-  def tsneAnchor() = {
+  def tsneAnchor(Q: DenseMatrix[Double]): DenseVector[Int] = {
     
+    DenseVector[Int](0)
   }
   
   

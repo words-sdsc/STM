@@ -8,13 +8,14 @@ class Configuration {
   var init  :Map[String, scala.Any] = Map[String, scala.Any]()
   var convergence  :Map[String, scala.Any] = Map("threshold"->null, "max_iterations"->null)
 
+  var init$verbose = false
+  
   init += ("mode"   -> null)
   init += ("nits"   -> null)
   init += ("alpha"  -> null)
   init += ("eta"    -> null)
   init += ("burnin" -> null)
-  init += ("verbose"-> null)
-  init += ("s"      -> null)
+   init += ("s"      -> null)
   init += ("p"      -> null)
   init += ("d-group-size" -> null)
   
