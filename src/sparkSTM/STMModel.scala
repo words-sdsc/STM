@@ -2,7 +2,7 @@ package sparkSTM
 
 
 import org.apache.spark.rdd.RDD
-import org.la4j.matrix.sparse.{CCSMatrix => SparseMatrix}
+import org.la4j.matrix.sparse.{CRSMatrix => SparseMatrix}
 import breeze.linalg.{Axis, DenseMatrix, DenseVector, Matrix, diag, inv, sum, det, cholesky, all, *}
 import breeze.optimize.LBFGS
 import org.apache.spark.{SparkContext, SparkConf}

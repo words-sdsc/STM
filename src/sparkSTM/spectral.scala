@@ -1,6 +1,7 @@
 package sparkSTM
 
-import org.la4j.matrix.sparse.{CCSMatrix => SparseMatrix}
+
+import org.la4j.matrix.sparse.{CRSMatrix => SparseMatrix}
 import breeze.linalg.{Axis, DenseMatrix, DenseVector, sum, *, diag} //Matrix, inv, sum, det, cholesky}
 import breeze.numerics.sqrt
 
@@ -29,14 +30,13 @@ object spectral {
     }
  
   def docsToSparseMatrix(documents: List[DenseMatrix[Double]]) : SparseMatrix = {    
-     val docsijv : Tuple3[Array[Int], Array[Int], Array[Double]] = null // get ijv from documents
-     // docsijv = (Array[Int] colPtrs, Array[Int] rowIndices, Array[Int] values)
-     val numRows = 100
-     val numCols = 100
+    val counts: List[Int]      = documents.map { x => x.cols } 
+    val rowPointers: List[Int] = counts.scanLeft(0)(_ + _)
+    val colIndices: List[Int]  = documents.map{ x => x(0,::).t.toArray }.flatMap {y => y}.map{t => t.toInt}
+    val vals: List[Double]     = documents.map{ x => x(1,::).t.toArray }.flatMap {y => y}
      
-     //rows = documents, cols = word indices, values = counts
-     //int rows, int columns, int cardinality, double[] values, int[] rowIndices, int[] columnPointers
-     new SparseMatrix(numRows, numCols)   
+     new SparseMatrix(documents.length,colIndices.max,rowPointers.last, vals.toArray, colIndices.toArray, rowPointers.toArray )
+     //int rows, int columns, int cardinality, double[] values, int[] columnIndices, int[] rowPointers   
   }
   
   def colSums(mat : SparseMatrix) : DenseVector[Double] = {
