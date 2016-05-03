@@ -1,15 +1,33 @@
 package sparkSTM
 
 import org.la4j.matrix.sparse.{CCSMatrix => SparseMatrix}
-import breeze.linalg.{DenseMatrix, DenseVector, sum, *} //Matrix, diag, inv, sum, det, cholesky}
+import breeze.linalg.{Axis, DenseMatrix, DenseVector, sum, *, diag} //Matrix, inv, sum, det, cholesky}
+import breeze.numerics.sqrt
 
 object spectral {
   
   def gram(mat: SparseMatrix) : DenseMatrix[Double] = {
+    val nd = rowSums(mat)
+    val indx = nd.findAll { x => x >=2 }
+    val matfilter = mat.select(indx.toArray, (0 to mat.columns()-1).toArray)
+    val ndfilter = nd(indx).toDenseVector
+    val divisor  = ndfilter :* (ndfilter :- 1.0)
     
-    DenseMatrix.rand[Double](2, 2) //dummy
-  }
+    //convert mat to densematrix
+    val dmat = DenseMatrix.zeros[Double](matfilter.rows(), matfilter.columns())
+    for(i <- 0 to matfilter.columns()-1) {
+      dmat(::, i) := matfilter.getColumn(i).asInstanceOf[DenseVector[Double]]
+    }
+    
+    /*		val G :DenseMatrix[Double] = (dmat(::, *) :/ divisor) 	//divide each col
+      		val F : DenseVector[Double] = sum((dmat(::, *) :/ divisor), Axis._0) */  //Sum down each column (giving a row vector)
+    val Htilde = dmat(::, *) :/ sqrt(divisor)        //divide each col
+    val Hhat   = diag( sum((dmat(::, *) :/ divisor), Axis._0).toDenseVector)   
+    val Q : DenseMatrix[Double] = (Htilde.t * Htilde) - Hhat
   
+    Q
+    }
+ 
   def docsToSparseMatrix(documents: List[DenseMatrix[Double]]) : SparseMatrix = {    
      val docsijv : Tuple3[Array[Int], Array[Int], Array[Double]] = null // get ijv from documents
      // docsijv = (Array[Int] colPtrs, Array[Int] rowIndices, Array[Int] values)
@@ -43,10 +61,18 @@ object spectral {
       rowSum
   }
   
+  //return indices which are zero
   def whichZeros(vec : DenseVector[Double]) : Seq[Int] = {
             var zeroIndices = List[Int]()
             val iter = vec.foreachPair( (i, v)  => {if(v==0) { zeroIndices = i :: zeroIndices } } ) 
             zeroIndices
+  }
+  
+  //return indices that have value >= threshold
+  def whichThreshold(vec : DenseVector[Double], thres: Double) : Array[Int] = {
+            var whichIndices = List[Int]()
+            val iter = vec.foreachPair( (i, v)  => {if(v >= thres) { whichIndices = i :: whichIndices } } ) 
+            whichIndices.toArray
   }
   
   def dropelements(vec: DenseVector[Double], which: Seq[Int]) : DenseVector[Double] = {
