@@ -101,16 +101,19 @@ object spectral {
     var rowSquaredSums :DenseVector[Double] = sum( Qbar :* Qbar, Axis._1 ) //col vector
     
     for(i <- 0 to K-1) {
-      basis(i) = rowSquaredSums.argmax
-      val maxval   = rowSquaredSums.max
-      val normalizer = 1/sqrt(maxval)
+      basis(i)             = rowSquaredSums.argmax
+      
+      val maxval           = rowSquaredSums.max
+      val normalizer       = 1/sqrt(maxval)
+      
       Qbar(basis(i), ::) :*= normalizer
-      //val rowwisemultiply: DenseMatrix[Double] = Qbar(*,::).map { x => (x :* vec)  } //for each row * with a densevec
+      
       val innerproducts: DenseVector[Double] = Qbar * Qbar(basis(i), ::).t
-      val project: DenseMatrix[Double] = innerproducts * Qbar(basis(i), ::)
+      val project: DenseMatrix[Double]       = innerproducts * Qbar(basis(i), ::)
+      
       basis(0 to i).foreach { x => {project(x,::) := 0.0} } 
       Qbar :-= project
-      rowSquaredSums = sum( Qbar :* Qbar, Axis._1 ) //col vector
+      rowSquaredSums = sum( Qbar :* Qbar, Axis._1 ) //col vector = rowSums
       basis(0 to i).foreach { x => {rowSquaredSums(x) = 0.0} }
       if(verbose) print(".")
     }
