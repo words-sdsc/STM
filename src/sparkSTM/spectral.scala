@@ -30,12 +30,12 @@ object spectral {
     }
  
   def docsToSparseMatrix(documents: List[DenseMatrix[Double]]) : SparseMatrix = {    
-    val counts: List[Int]      = documents.map { x => x.cols } 
-    val rowPointers: List[Int] = counts.scanLeft(0)(_ + _)
+    val counts: List[Int]      = documents.map { x => x.cols }  //no of non-zero entries per doc
+    val rowPointers: List[Int] = counts.scanLeft(0)(_ + _)      //convert to CRS format
     val colIndices: List[Int]  = documents.map{ x => x(0,::).t.toArray }.flatMap {y => y}.map{t => t.toInt}
     val vals: List[Double]     = documents.map{ x => x(1,::).t.toArray }.flatMap {y => y}
      
-     new SparseMatrix(documents.length,colIndices.max,rowPointers.last, vals.toArray, colIndices.toArray, rowPointers.toArray )
+     new SparseMatrix(documents.length,colIndices.max,rowPointers.last, vals.toArray, colIndices.toArray, rowPointers.toArray)
      //int rows, int columns, int cardinality, double[] values, int[] columnIndices, int[] rowPointers   
   }
   
