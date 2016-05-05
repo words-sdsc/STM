@@ -96,48 +96,75 @@ object spectral {
     
   }
   
-  def fastAnchor(Qbar: DenseMatrix[Double], K: Int, verbose: Boolean): DenseVector[Int] = {
-    val basis = DenseVector.zeros[Int](K)
-    var rowSquaredSums :DenseVector[Double] = sum( Qbar :* Qbar, Axis._1 ) //col vector
+  def fastAnchor(Qbar: DenseMatrix[Double], K: Int, verbose: Boolean): List[Int] = {
+    var basis = List[Int]()
+    var rowSquaredSums :DenseVector[Double] = sum( Qbar :* Qbar, Axis._1 ) //col vector = rowSums
+    var indx : Int = 0
     
     for(i <- 0 to K-1) {
-      basis(i)             = rowSquaredSums.argmax
+      indx                 = rowSquaredSums.argmax
+      basis                ::= indx               //adds to 0th position of list, hence reverse later
       
       val maxval           = rowSquaredSums.max
       val normalizer       = 1/sqrt(maxval)
       
-      Qbar(basis(i), ::) :*= normalizer
+      Qbar(indx, ::) :*= normalizer
       
-      val innerproducts: DenseVector[Double] = Qbar * Qbar(basis(i), ::).t
-      val project: DenseMatrix[Double]       = innerproducts * Qbar(basis(i), ::)
+      val innerproducts: DenseVector[Double] = Qbar * Qbar(indx, ::).t
+      val project: DenseMatrix[Double]       = innerproducts * Qbar(indx, ::)
       
-      basis(0 to i).foreach { x => {project(x,::) := 0.0} } 
-      Qbar :-= project
-      rowSquaredSums = sum( Qbar :* Qbar, Axis._1 ) //col vector = rowSums
-      basis(0 to i).foreach { x => {rowSquaredSums(x) = 0.0} }
+      project(basis, ::)   := 0.0      
+      Qbar                 :-= project
+      rowSquaredSums         = sum( Qbar :* Qbar, Axis._1 ) //col vector = rowSums
+      rowSquaredSums(basis) := 0.0
+      
       if(verbose) print(".")
     }
     
-    basis
+    basis.reverse
   }
   
-  def recoverL2(Q : DenseMatrix[Double], anchor : DenseVector[Int], 
+  def recoverL2(Qbar : DenseMatrix[Double], anchor : List[Int], 
       wprob : DenseVector[Double], verbose : Boolean) : DenseMatrix[Double] = {
+
+    val X         = Qbar(anchor, ::).toDenseMatrix
+    val XtX       = X * X.t
+    var condprob  = List[DenseVector[Double]]()
     
-    DenseMatrix.zeros[Double](2,2)
+    for(i <- 0 to Qbar.rows-1) {
+      if(anchor.contains(i)) {
+        val vec    = DenseVector.zeros[Double](XtX.rows)
+        vec(anchor.indexOf(i)) = 1.0
+        condprob ::= vec //adds to 0th position of list, hence reverse later
+      } else {
+        val y      = Qbar(i,::).t
+        condprob ::= spectral.expgrad(X,y,XtX)
+      }
+      
+      if(verbose) { if(i%100 == 0) print("/") }
+    }
+    if(verbose) print(".")
+    
+    //take each vector from the list and stack one above another (rbind)
+    val weights  = DenseMatrix.vertcat((condprob.reverse).map(_.toDenseMatrix): _*)
+    val A        = weights(::,*) :* wprob      //multiply each col of weights by vec wprob
+    A.t(::,*) / sum(A, Axis._0).toDenseVector  //sum gives row vector = colSums
+    //last line is beta
   }
   
-  def expgrad() = {
+  def expgrad(X : DenseMatrix[Double],y: DenseVector[Double],XtXX : DenseMatrix[Double] ) : DenseVector[Double] = {
     
+    
+    DenseVector(1.0)
   }
   
   def mpinv() = {
     
   }
   
-  def tsneAnchor(Q: DenseMatrix[Double]): DenseVector[Int] = {
+  def tsneAnchor(Q: DenseMatrix[Double]): List[Int] = {
     
-    DenseVector[Int](0)
+    List[Int](0)
   }
   
   

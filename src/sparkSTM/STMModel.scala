@@ -60,7 +60,7 @@ class STMModel {
      //**************************ıllıllı ıllıllı************************** 
      //{•------» (2) anchor words «------•}
      //**************************ıllıllı ıllıllı************************** 
-     var anchor : DenseVector[Int] = null
+     var anchor : List[Int] = null
      if(verbose) println("Finding anchor words...")
      if(K!=0) {
         anchor = spectral.fastAnchor(Q, K, verbose)
