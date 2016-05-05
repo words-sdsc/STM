@@ -3,7 +3,7 @@ package sparkSTM
 
 import org.la4j.matrix.sparse.{CRSMatrix => SparseMatrix}
 import breeze.linalg.{Axis, DenseMatrix, DenseVector, sum, *, diag} //Matrix, inv, sum, det, cholesky}
-import breeze.numerics.sqrt
+import breeze.numerics.{abs, sqrt, exp}
 
 object spectral {
   
@@ -87,7 +87,10 @@ object spectral {
   def refillZeros(K:Int, V:Int, beta0:DenseMatrix[Double], keep: Seq[Int], whichZeros: Seq[Int]) : DenseMatrix[Double] = {
        val betaNew = DenseMatrix.zeros[Double](K, V)
        betaNew(::, keep)       := beta0
-       betaNew(::, whichZeros) := 5.960465E-8 //reference: https://issues.scala-lang.org/browse/SI-3791
+       
+       //reference: http://lampsvn.epfl.ch/trac/scala/browser/scala/tags/R_2_7_4_final/src/library/scala/Math.scala?view=markup
+       betaNew(::, whichZeros) := java.lang.Double.MIN_VALUE 
+       
        //divide every col by denominator=row sums
        betaNew(::,*) :/ sum(betaNew(*, ::))
  }
@@ -147,15 +150,46 @@ object spectral {
     
     //take each vector from the list and stack one above another (rbind)
     val weights  = DenseMatrix.vertcat((condprob.reverse).map(_.toDenseMatrix): _*)
-    val A        = weights(::,*) :* wprob      //multiply each col of weights by vec wprob
+    val A        = weights(::,*) :* wprob      //[check] multiply each col of weights by vec wprob
     A.t(::,*) / sum(A, Axis._0).toDenseVector  //sum gives row vector = colSums
     //last line is beta
   }
   
-  def expgrad(X : DenseMatrix[Double],y: DenseVector[Double],XtXX : DenseMatrix[Double] ) : DenseVector[Double] = {
+  def expgrad(X : DenseMatrix[Double],y: DenseVector[Double],XtX : DenseMatrix[Double]) : DenseVector[Double] = {
+    //note: DenseVector is a col vector; currently y here is passed as a col-vector
     
+    val tol     = 1e-7
+    val maxIter = 500
+    val filler : Double = 1/X.rows
+    var alpha   = DenseMatrix.fill(1, X.rows){filler}                            //row-vector
     
-    DenseVector(1.0)
+    val ytX = new DenseMatrix(1, X.rows , data=(y.t * X.t).t.toArray)            //row-vector
+    //[check] is y supposed to be a row vector or a column vector (in R code) ?
+    //[check] had to take y.t to make it row vector since ytX is row vector
+
+    var converged = false
+    val eta       = 50.0
+    var sseOld : Double = java.lang.Double.POSITIVE_INFINITY
+    var its       = 1
+    
+    while(!converged || (its < maxIter)) {
+      var grad : DenseMatrix[Double] = ytX - (alpha*XtX)
+      val sse  : Double  = sum(grad :* grad)
+      grad          = grad :* (eta*2.0)
+      val maxderiv  = grad.max
+      
+      alpha = alpha :* exp(grad - maxderiv)
+      //[check] supposed to be element wise multiplication with alpha ?
+      
+      alpha = alpha / sum(alpha)
+      converged = abs(sqrt(sseOld) - sqrt(sse)) < tol
+      sseOld = sse
+      its    += 1
+      
+    }
+    
+    alpha.toDenseVector
+    //return(list(par=as.numeric(alpha), its=its, converged=converged,entropy=entropy, log.sse=log(sse)))
   }
   
   def mpinv() = {
