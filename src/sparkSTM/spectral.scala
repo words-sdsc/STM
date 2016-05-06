@@ -1,6 +1,5 @@
 package sparkSTM
 
-
 import org.la4j.matrix.sparse.{CRSMatrix => SparseMatrix}
 import breeze.linalg.{Axis, DenseMatrix, DenseVector, sum, *, diag} //Matrix, inv, sum, det, cholesky}
 import breeze.numerics.{abs, sqrt, exp}
@@ -114,7 +113,7 @@ object spectral {
       val innerproducts: DenseVector[Double] = Qbar * Qbar(indx, ::).t
       val project: DenseMatrix[Double]       = innerproducts * Qbar(indx, ::)
       
-      project(basis, ::)   := 0.0      
+      project(basis, ::)    := 0.0      
       Qbar                 :-= project
       rowSquaredSums         = sum( Qbar :* Qbar, Axis._1 ) //col vector = rowSums
       rowSquaredSums(basis) := 0.0
@@ -179,11 +178,10 @@ object spectral {
       alpha = alpha :* exp(grad - maxderiv)
       //[check] supposed to be element wise multiplication with alpha ?
       
-      alpha = alpha / sum(alpha)
+      alpha     = alpha / sum(alpha)
       converged = abs(sqrt(sseOld) - sqrt(sse)) < tol
-      sseOld = sse
-      its    += 1
-      
+      sseOld    = sse
+      its      += 1
     }
     
     alpha.toDenseVector

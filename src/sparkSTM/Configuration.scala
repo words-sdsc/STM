@@ -1,22 +1,30 @@
 package sparkSTM
-import scala.collection.mutable.{Map}
 
 class Configuration {
   
-  var dim   :Map[String, scala.Int] = Map("K"->0, "V"->0, "A"->0, "N"->0)
-  var kappa :Map[String, scala.Any] = Map("LDAbeta"->null, "Interactions"->null)
-  var init  :Map[String, scala.Any] = Map[String, scala.Any]()
-  var convergence  :Map[String, scala.Any] = Map("threshold"->null, "max_iterations"->null)
+  //dim
+  var dim$K : Int = 0
+  var dim$V : Int = 0
+  var dim$A : Int = 0
+  var dim$N : Int = 0
 
-  var init$verbose = false
+  //kappa
+  var kappa$LDAbeta: scala.Any    = null
+  var kappa$Interactions: scala.Any = null
   
-  init += ("mode"   -> null)
-  init += ("nits"   -> null)
-  init += ("alpha"  -> null)
-  init += ("eta"    -> null)
-  init += ("burnin" -> null)
-   init += ("s"      -> null)
-  init += ("p"      -> null)
-  init += ("d-group-size" -> null)
+  //convergence
+  var convergence$threshold: Double = 0.0
+  var convergence$max_iterations: Int = 0
   
+  //init
+  var init$verbose : Boolean = false
+  var init$mode = null
+  var init$nits = null
+  var init$alpha = null
+  var init$eta = null
+  var init$burnin = null
+  var init$s = null
+  var init$p = null
+  var init$d_group_size = null
+   
 }

@@ -6,7 +6,7 @@ import org.la4j.matrix.sparse.{CRSMatrix => SparseMatrix}
 import breeze.linalg.{Axis, DenseMatrix, DenseVector, Matrix, diag, inv, sum, det, cholesky, all, *}
 import breeze.optimize.LBFGS
 import org.apache.spark.{SparkContext, SparkConf}
-import breeze.numerics.log
+import breeze.numerics.{abs, log}
 import scala.{Iterator=>ScalaIterator, Double}
 import java.util.Iterator
 import scala.collection.mutable.ArrayBuffer
@@ -14,19 +14,20 @@ import scala.collection.mutable.ArrayBuffer
  
 class STMModel {
   //GG = set of global parameters
-  var beta_g  : DenseMatrix[Double] = null
+  var beta_g  : DenseMatrix[Double]  = null
   var mu_g    : Tuple2[DenseMatrix[Double], DenseMatrix[Double]] = null
-  var sigma_g : DenseMatrix[Double] = null
-  
+  var sigma_g : DenseMatrix[Double]  = null
+  var settings: Configuration        = null
+  var modelConvergence   : Convergence = null //info whether this model has converged
   
   /*[function]********************* initialize the STM model **********************/
   def initialize(documents: List[DenseMatrix[Double]], settings: Configuration) = {
      println("Initializing the STM model (Spectral mode) ...")
      
-     var K : Int = settings.dim("K")
-     val V : Int = settings.dim("V")
-     val N : Int = settings.dim("N")
-     val A : Int = settings.dim("A")
+     var K : Int = settings.dim$K
+     val V : Int = settings.dim$V
+     val N : Int = settings.dim$N
+     val A : Int = settings.dim$A
      val verbose : Boolean = settings.init$verbose
      
            if(K >= V) {
@@ -227,6 +228,40 @@ class STMModel {
       val newEta       = lbfgs.minimize(likeliHoodF, eta)
       
       hessPhiBound.evaluate(newEta, beta, doc_ct, mu, siginv, sigmaentropy )
+  }
+  
+  /*[function]********************* checks if this model has converged **********************
+  						  * updates global variable "convergence", returns the same */
+  
+  def checkModelConvergence(bound: List[Double]) = {
+    //settings: Configuration and state: Convergence are local variables of this model
+    
+    val verbose = settings.init$verbose
+    val emtol = settings.convergence$threshold
+    val maxits = settings.convergence$max_iterations
+    
+    if(modelConvergence == null) { modelConvergence = new Convergence() }
+    
+    modelConvergence.bound ::= sum(bound)    //0th position holds latest value in the bound: List
+    
+    if(modelConvergence.its > 1) {
+      val oldB = modelConvergence.bound(1)
+      val newB = modelConvergence.bound(0)
+      val check = (newB-oldB)/abs(oldB)
+            if(check < emtol) {
+                  modelConvergence.converged = true
+                  modelConvergence.stopits = true
+                  if(verbose) println("Model Converged")
+                  //return
+            } else if(modelConvergence.its == maxits) {
+                  modelConvergence.stopits = true
+                  if(verbose) println("Model Terminated Before Convergence Reached")
+                  //return
+            }
+    } 
+    
+    modelConvergence.its += 1
+    //nothing is returned; 'modelConvergence' is local variable of this class
   }
   
 }
