@@ -75,6 +75,7 @@ object spectral {
             whichIndices.toArray
   }
   
+  //drop elements from a vector and return remaining vector
   def dropelements(vec: DenseVector[Double], which: Seq[Int]) : DenseVector[Double] = {
            val keep : List[Int] = (0 to vec.length-1 toList) diff which.toList
            var L  = List[Double]()
@@ -84,6 +85,7 @@ object spectral {
            DenseVector(L.toArray)      
   }
   
+  //fill zeros in a matrix of KxV at columns given by 'whichZeros'
   def refillZeros(K:Int, V:Int, beta0:DenseMatrix[Double], keep: Seq[Int], whichZeros: Seq[Int]) : DenseMatrix[Double] = {
        val betaNew = DenseMatrix.zeros[Double](K, V)
        betaNew(::, keep)       := beta0
@@ -94,10 +96,6 @@ object spectral {
        //divide every col by denominator=row sums
        betaNew(::,*) :/ sum(betaNew(*, ::))
  }
-  
-  def gram_rp() = {
-    
-  }
   
   def fastAnchor(Qbar: DenseMatrix[Double], K: Int, verbose: Boolean): List[Int] = {
     var basis = List[Int]()
@@ -199,6 +197,10 @@ object spectral {
   def tsneAnchor(Q: DenseMatrix[Double]): List[Int] = {
     
     List[Int](0)
+  }
+   
+  def gram_rp() = {
+    
   }
   
   
