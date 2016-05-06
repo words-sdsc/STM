@@ -1,6 +1,5 @@
 package sparkSTM
 
-
 import org.apache.spark.rdd.RDD
 import org.la4j.matrix.sparse.{CRSMatrix => SparseMatrix}
 import breeze.linalg.{Axis, DenseMatrix, DenseVector, Matrix, diag, inv, sum, det, cholesky, all, *}
@@ -13,17 +12,23 @@ import scala.collection.mutable.ArrayBuffer
 
  
 class STMModel {
+  
+  var beta_init : DenseVector[DenseMatrix[Double]] = null
+  
   //GG = set of global parameters
   var beta_g  : DenseMatrix[Double]  = null
-  var mu_g    : Tuple2[DenseMatrix[Double], DenseMatrix[Double]] = null
+  var mu_g    : Tuple2[DenseMatrix[Double], DenseMatrix[Double]] = (null, null) //mu_g = (mu, gamma )
   var sigma_g : DenseMatrix[Double]  = null
+  var lambda_g: DenseMatrix[Double]  = null
+  
   var settings: Configuration        = null
   var modelConvergence   : Convergence = null //info whether this model has converged
   
   /*[function]********************* initialize the STM model **********************/
-  def initialize(documents: List[DenseMatrix[Double]], settings: Configuration) = {
+  def initialize(documents: List[DenseMatrix[Double]], config: Configuration) = {
      println("Initializing the STM model (Spectral mode) ...")
      
+     this.settings = config
      var K : Int = settings.dim$K
      val V : Int = settings.dim$V
      val N : Int = settings.dim$N
@@ -89,15 +94,18 @@ class STMModel {
      val lambda = DenseMatrix.zeros[Double](N, K-1)
      if(verbose) println("Initialization complete")
      
-     var beta : List[DenseMatrix[Double]] = List(beta0)
-     for (i <- 1 to A-1) {
-       beta = beta0 :: beta
-     }
+     //assign beta for each aspect
+     val beta = DenseVector.fill(A){beta0}  //List of Matrices
      
-     val model = (mu, sigma, beta, lambda)
-  }
+     
+     //model = (mu, sigma, beta, lambda)
+     this.mu_g       =(mu, null)                //mu_g = (mu, gamma)
+     this.sigma_g    =sigma
+     this.beta_init  =beta
+     this.lambda_g   =lambda
+  } 
   
-  def kappa_init() = {
+  def contruct_output() = {
     
   }
   
@@ -105,7 +113,7 @@ class STMModel {
   def runSTM(documents: List[DenseMatrix[Double]], betaIndex: DenseVector[Int], 
       updateMu: Boolean, beta: DenseVector[DenseMatrix[Double]], lambdaOld: DenseMatrix[Double],
       mu: DenseMatrix[Double], sigma: DenseMatrix[Double],
-      verbose: Boolean) : STMModel = { 
+      verbose: Boolean) = { 
     
     //Spark
     val conf   = new SparkConf().setAppName("Spark Pi").setMaster("local")
@@ -123,6 +131,8 @@ class STMModel {
     //broadcast any large data structures to each node if they are needed by every doc
     val betaBc = spark.broadcast(beta)
     
+    while(! modelConvergence.stopits ) {
+      
     //partition the set of documents
     val partitionsMetrics: RDD[(DenseMatrix[Double], DenseVector[DenseMatrix[Double]], 
                                     List[Double], List[DenseVector[Double]] )] =   
@@ -177,18 +187,28 @@ class STMModel {
       
       //update global parameters GG using these aggregates PP
       
-        val covar_dummy : DenseMatrix[Double] = null                   // [ ? covar ]
-        this.mu_g     = mStep.update_mu(collect_lambda, covar_dummy)
-        
-        val sigprior_dummy : Double = 0.5                              // [ ? is this a double]
-        this.sigma_g  = mStep.update_sigma(collect_sigma, collect_lambda, mu_g._1, sigprior_dummy)
-        
-        this.beta_g   = mStep.update_beta(collect_beta)
-        
+      val covar_dummy : DenseMatrix[Double] = null                   // [ ? covar ]
+      this.mu_g     = mStep.update_mu(collect_lambda, covar_dummy)
+      
+      val sigprior_dummy : Double = 0.5                              // [ ? is this a double]
+      this.sigma_g  = mStep.update_sigma(collect_sigma, collect_lambda, mu_g._1, sigprior_dummy)
+      
+      this.beta_g   = mStep.update_beta(collect_beta)
+    
+      //check CONVERGENCE
+      checkModelConvergence(collect_bound)
+      
+      if(!modelConvergence.stopits & verbose) {
+        println("iteration :"+modelConvergence.its)
+      }
+      
+    } // end of while loop
+    
     //unpersist broadcasted variables
     betaBc.unpersist()
     
-    this
+    if(verbose) println("all iterations finished...")
+    //println("call construct_output()...") 
     
   } //end runSTM
   
@@ -233,7 +253,7 @@ class STMModel {
   /*[function]********************* checks if this model has converged ***********************
   						  *                 updates member variable "modelConvergence" of this object		*/
   
-  def checkModelConvergence(bound: List[Double]) = {
+  def checkModelConvergence(bound: DenseVector[Double]) = {
     //settings: Configuration and state: Convergence are local variables of this model
     
     val verbose = settings.init$verbose
@@ -262,6 +282,11 @@ class STMModel {
     
     modelConvergence.its += 1
     //nothing is returned; 'modelConvergence' is member variable of this class
+  }
+  
+  
+  def kappa_init() = {
+    
   }
   
 }

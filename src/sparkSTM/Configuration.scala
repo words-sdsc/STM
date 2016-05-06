@@ -7,6 +7,10 @@ class Configuration {
   var dim$V : Int = 0
   var dim$A : Int = 0
   var dim$N : Int = 0
+  var dim$wcounts$x : List[Int] = null
+  
+  //covariates
+  var covariates$betaindex = null
 
   //kappa
   var kappa$LDAbeta: scala.Any    = null
