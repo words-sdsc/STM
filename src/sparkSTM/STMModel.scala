@@ -230,8 +230,8 @@ class STMModel {
       hessPhiBound.evaluate(newEta, beta, doc_ct, mu, siginv, sigmaentropy )
   }
   
-  /*[function]********************* checks if this model has converged **********************
-  						  * updates global variable "convergence", returns the same */
+  /*[function]********************* checks if this model has converged ***********************
+  						  *                 updates member variable "modelConvergence" of this object		*/
   
   def checkModelConvergence(bound: List[Double]) = {
     //settings: Configuration and state: Convergence are local variables of this model
@@ -261,7 +261,7 @@ class STMModel {
     } 
     
     modelConvergence.its += 1
-    //nothing is returned; 'modelConvergence' is local variable of this class
+    //nothing is returned; 'modelConvergence' is member variable of this class
   }
   
 }
