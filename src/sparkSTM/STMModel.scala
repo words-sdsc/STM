@@ -129,7 +129,12 @@ class STMModel {
     val (siginv, sigmaentropy) = valuesFromSigma(sigma: DenseMatrix[Double])
     
     //broadcast any large data structures to each node if they are needed by every doc
-    val betaBc = spark.broadcast(beta)
+    val betaBc      = spark.broadcast(beta)
+    
+    // check : is broadcasting of below variables efficient
+    val betaIndexBc = spark.broadcast(betaIndex)
+    val lambdaOldBc = spark.broadcast(lambdaOld)
+    val muBc        = spark.broadcast(mu)
     
     while(! modelConvergence.stopits ) {
       
@@ -155,10 +160,10 @@ class STMModel {
                   case (doc: DenseMatrix[Double], indx: Int) =>  
                        
                     val wordIndices   = (doc(0, ::).t).data.map(_.toInt).toIndexedSeq //1st row of doc = indices of words
-                    val aspect  = betaIndex(indx)
-                    val init_   = lambdaOld(indx,::).t //matrix N x K-1, each row is a lambda for a doc
+                    val aspect  = betaIndexBc.value(indx)
+                    val init_   = lambdaOldBc.value(indx,::).t //matrix N x K-1, each row is a lambda for a doc
                     //if(updateMu)  //check if we need this
-                    val mu_     = mu(::,indx) 
+                    val mu_     = muBc.value(::,indx) 
                     val beta_   = betaBc.value(aspect)(::, wordIndices).toDenseMatrix
                     
                     /* infer this document via STM,
@@ -187,10 +192,10 @@ class STMModel {
       
       //update global parameters GG using these aggregates PP
       
-      val covar_dummy : DenseMatrix[Double] = null                   // [ ? covar ]
+      val covar_dummy : DenseMatrix[Double] = null                   // [ ? check covar ]
       this.mu_g     = mStep.update_mu(collect_lambda, covar_dummy)
       
-      val sigprior_dummy : Double = 0.5                              // [ ? is this a double]
+      val sigprior_dummy : Double = 0.5                              // [ ? check is this a double]
       this.sigma_g  = mStep.update_sigma(collect_sigma, collect_lambda, mu_g._1, sigprior_dummy)
       
       this.beta_g   = mStep.update_beta(collect_beta)
@@ -206,6 +211,9 @@ class STMModel {
     
     //unpersist broadcasted variables
     betaBc.unpersist()
+    betaIndexBc.unpersist()
+    lambdaOldBc.unpersist()
+    muBc.unpersist()
     
     if(verbose) println("all iterations finished...")
     //println("call construct_output()...") 
