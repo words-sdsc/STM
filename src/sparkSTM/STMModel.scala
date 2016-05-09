@@ -259,7 +259,7 @@ class STMModel {
   }
   
   /*[function]********************* checks if this model has converged ***********************
-  	 *                 updates member variable "modelConvergence" of this object							*/
+  	 *updates member variable "modelConvergence" of this object*/
   
   def checkModelConvergence(bound: DenseVector[Double]) = {
     //settings: Configuration and state: Convergence are local variables of this model
