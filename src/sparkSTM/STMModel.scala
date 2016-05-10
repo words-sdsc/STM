@@ -98,7 +98,7 @@ class STMModel {
      val beta = DenseVector.fill(A){beta0}  //List of Matrices
      
      
-     //model = (mu, sigma, beta, lambda)
+     //model = (mu, sigma, beta, lambda) //mu_g = (mu, gamma)
      this.mu_g       =(mu, null)                //mu_g = (mu, gamma)
      this.sigma_g    =sigma
      this.beta_init  =beta

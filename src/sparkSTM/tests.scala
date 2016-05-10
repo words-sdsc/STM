@@ -21,6 +21,38 @@ object tests {
   var siginvp : DenseMatrix[Double] = DenseMatrix.zeros[Double](74,74) 
   var sigmaentropyp: Double = 0.0
   
+  
+  //**************************** initialize() [Test] *************************
+  def test_initialization() = {
+    val model  = new STMModel()
+    
+    val documents : List[DenseMatrix[Double]] = null
+    //fill documents from simple triplet matrix
+    
+    
+    val config = new Configuration()
+    //setup the config object
+    
+    
+    model.initialize(documents, config)
+    
+    //test the initialized values 
+    //model.mu_g=(mu, gamma), model.sigma_g=sigma, model.beta_init=beta, model.lambda_g=lambda
+    
+    val test_mu : DenseMatrix[Double] = null
+    val test_sigma : DenseMatrix[Double] = null
+    val test_beta : DenseVector[DenseMatrix[Double]] = null
+    val test_lambda: DenseMatrix[Double] = null
+    
+    println("mu diff : " + sum(test_mu - model.mu_g._1))
+    println("sigma diff : " + sum(test_sigma - model.sigma_g))
+    for( i <- 0 to model.beta_init.length-1) {
+          println("beta diff of location :" + i + ": " + sum(test_beta(i) - model.beta_init(i)))
+    }
+    println("lambda diff : " + sum(test_lambda - model.lambda_g))
+    
+  }
+  
   //**************************** hessPhiBound [Test] *************************
   
   def test_hessPhiBound() = 

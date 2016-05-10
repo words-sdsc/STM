@@ -6,25 +6,34 @@ object start {
   
   def main(args: Array[String]) 
   {  
-    val model    = new STMModel()
-    val settings = new Configuration()
     
+    tests.test_initialization()
+    
+    
+    
+    
+    /*
+    val model  = new STMModel()
+    
+    val config = new Configuration()
     // ↳configure the settings object
      
-    // ↳fill documents
     val documents : List[DenseMatrix[Double]] = null
+    // ↳fill documents
     
+    model.initialize(documents, config)
     // ↳initialize the STM model
-    model.initialize(documents, settings)
-  
-    val ntokens = settings.dim$wcounts$x.sum
-    val betaindex = settings.covariates$betaindex
     
+    val ntokens = config.dim$wcounts$x.sum
+    val betaindex = config.covariates$betaindex
+    
+    //model.runSTM(documents, betaIndex, updateMu, beta, lambdaOld, mu, sigma, verbose)
     // ↳run STM until convergence criteria or max iterations reached
-    // model.runSTM(documents, betaIndex, updateMu, beta, lambdaOld, mu, sigma, verbose)
     
+    model.contruct_output() */
     // ↳construct output
-    model.contruct_output()
+    
+    
     
     // ***other tests below this line ***
     //tests.test_hessPhiBound()
