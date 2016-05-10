@@ -6,7 +6,7 @@ import org.json.simple.JSONObject
 import java.io.FileReader
 import java.util.HashMap
 import breeze.linalg.{DenseVector, DenseMatrix, sum}
-import breeze.numerics.abs
+import breeze.numerics.{abs}
 import breeze.optimize.{LBFGS}
 
 object tests {
@@ -44,12 +44,12 @@ object tests {
     val test_beta : DenseVector[DenseMatrix[Double]] = null
     val test_lambda: DenseMatrix[Double] = null
     
-    println("mu diff : " + sum(test_mu - model.mu_g._1))
-    println("sigma diff : " + sum(test_sigma - model.sigma_g))
+    println("mu diff : " + sum(abs(test_mu - model.mu_g._1)))
+    println("sigma diff : " + sum(abs(test_sigma - model.sigma_g)))
     for( i <- 0 to model.beta_init.length-1) {
-          println("beta diff of location :" + i + ": " + sum(test_beta(i) - model.beta_init(i)))
+          println("beta diff of location :" + i + ": " + sum(abs(test_beta(i) - model.beta_init(i))))
     }
-    println("lambda diff : " + sum(test_lambda - model.lambda_g))
+    println("lambda diff : " + sum(abs(test_lambda - model.lambda_g)))
     
   }
   
