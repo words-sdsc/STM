@@ -8,7 +8,7 @@ import org.apache.spark.{SparkContext, SparkConf}
 import breeze.numerics.{abs, log}
 import scala.{Iterator=>ScalaIterator, Double}
 import java.util.Iterator
-import scala.collection.mutable.ArrayBuffer
+//import scala.collection.mutable.ArrayBuffer
 
  
 class STMModel {
@@ -104,10 +104,7 @@ class STMModel {
      this.beta_init  =beta
      this.lambda_g   =lambda
   } 
-  
-  def contruct_output() = {
-    
-  }
+
   
   /*[function]********************* run STM over a set of documents **********************/
   def runSTM(documents: List[DenseMatrix[Double]], betaIndex: DenseVector[Int], 
@@ -192,12 +189,8 @@ class STMModel {
       
       //update global parameters GG using these aggregates PP
       
-      val covar_dummy : DenseMatrix[Double] = null                   // [ ? check covar ]
-      this.mu_g     = mStep.update_mu(collect_lambda, covar_dummy)
-      
-      val sigprior_dummy : Double = 0.5                              // [ ? check is this a double]
-      this.sigma_g  = mStep.update_sigma(collect_sigma, collect_lambda, mu_g._1, sigprior_dummy)
-      
+      this.mu_g     = mStep.update_mu(collect_lambda, settings.covariance)      
+      this.sigma_g  = mStep.update_sigma(collect_sigma, collect_lambda, mu_g._1, settings.sigprior)
       this.beta_g   = mStep.update_beta(collect_beta)
     
       //check CONVERGENCE
@@ -292,6 +285,10 @@ class STMModel {
     //nothing is returned; 'modelConvergence' is member variable of this class
   }
   
+    
+  def contruct_output() = {
+    
+  }
   
   def kappa_init() = {
     

@@ -1,4 +1,5 @@
 package sparkSTM
+import breeze.linalg.DenseMatrix
 
 class Configuration {
   
@@ -30,5 +31,8 @@ class Configuration {
   var init$s = null
   var init$p = null
   var init$d_group_size = null
-   
+  
+  //covariance
+  var covariance : DenseMatrix[Double] = null  //used by update_mu
+  var sigprior : Double = 0.0 //used by update_sigma
 }
