@@ -1,5 +1,6 @@
 package sparkSTM
 
+import com.opencsv._
 import org.json.simple.parser.JSONParser
 import org.json.simple.JSONArray
 import org.json.simple.JSONObject
@@ -23,15 +24,51 @@ object tests {
   
   //****************************  auxillary functions *************************
   
-    def filldocumentsfromJSON(): List[DenseMatrix[Double]] = {
+    def filldocumentsfromJSON(N : Int, verbose: Boolean): List[DenseMatrix[Double]] = {
+      var documents : List[DenseMatrix[Double]] = Nil
       
-      List(DenseMatrix.zeros[Double](1,1))
+      var csvreader : CSVReader = new CSVReader(new FileReader("/Users/aloksingh/Desktop/testing_data/Archive/doctriplet.csv"))
+      var nextLine  : Array[String] = null
+      var lines = 0
+      var doc = 1
+      var singledoc : List[DenseVector[Double]] = Nil
+      nextLine = csvreader.readNext() //read the header line and skip it
+      
+      while ( {nextLine = csvreader.readNext();  nextLine!= null}  ) {
+        // nextLine[] is an array of values from the line
+        if(nextLine(0).toInt == doc) {
+          singledoc ::= DenseVector(nextLine(1).toDouble, nextLine(2).toDouble)
+          lines = lines +1
+        } else {
+        
+          //take each vector from the list and stack one above another (rbind)
+          var docmatrix = DenseMatrix.vertcat((singledoc.reverse).map(_.toDenseMatrix): _*)
+          // append to List named documents
+          if(verbose) System.out.println("Doc #" + doc + " ... Lines=" + lines)
+          documents ::= docmatrix.t         
+
+          //start new document
+          doc = doc + 1
+          lines = 0
+          singledoc = Nil
+          singledoc ::= DenseVector(nextLine(1).toDouble, nextLine(2).toDouble)
+        }
+      } 
+          //last document processed separately due to exit from while loop      
+          var docmatrix = DenseMatrix.vertcat((singledoc.reverse).map(_.toDenseMatrix): _*)
+          if(verbose) System.out.println("Doc #" + doc + " ... Lines=" + lines)
+          documents ::= docmatrix.t 
+          if(N != documents.length) System.out.println("#documents mismatch : check N")
+          System.out.println("Read all documents; N = " + documents.length)
+
+      documents.reverse
     }
     
-    def readTestValuesfromJSON(): (DenseVector[Int], DenseMatrix[Double]) = {
+    def readSpectralTestValuesfromJSON(): (DenseVector[Int], DenseMatrix[Double]) = {
       var fastanchorList : DenseVector[Int] = null
       var recoverL2matrix : DenseMatrix[Double] = null
-      
+        
+      //↳read output for spectral benchmark
       try {
       //read input from JSON file
       val parser : JSONParser = new JSONParser();
@@ -74,16 +111,20 @@ object tests {
   def test_initialization() = {
     val model  = new STMModel()
     
-    val documents : List[DenseMatrix[Double]] = filldocumentsfromJSON()
-    //fill documents from simple triplet matrix
-    
     val config = new Configuration()
     //setup the config object
     config.testmode = true
+    config.dim$K = 75
+    config.dim$V = 2632
+    config.dim$N = 5000
+    config.dim$A = 1
     
-    //model.initialize(documents, config)
+    val documents : List[DenseMatrix[Double]] = filldocumentsfromJSON(config.dim$N, config.init$verbose)
+    //fill documents from simple triplet matrix
     
-    var testvalues = readTestValuesfromJSON()
+    model.initialize(documents, config)
+    
+    var testvalues = readSpectralTestValuesfromJSON()
     var recoverL2matrix : DenseMatrix[Double] = testvalues._2
     var fastanchorList : DenseVector[Int] = testvalues._1
 
