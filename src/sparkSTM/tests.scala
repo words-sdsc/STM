@@ -21,35 +21,80 @@ object tests {
   var siginvp : DenseMatrix[Double] = DenseMatrix.zeros[Double](74,74) 
   var sigmaentropyp: Double = 0.0
   
+  //****************************  auxillary functions *************************
   
+    def filldocumentsfromJSON(): List[DenseMatrix[Double]] = {
+      
+      List(DenseMatrix.zeros[Double](1,1))
+    }
+    
+    def readTestValuesfromJSON(): (DenseVector[Int], DenseMatrix[Double]) = {
+      var fastanchorList : DenseVector[Int] = null
+      var recoverL2matrix : DenseMatrix[Double] = null
+      
+      try {
+      //read input from JSON file
+      val parser : JSONParser = new JSONParser();
+      val reader : FileReader = new FileReader("/Users/aloksingh/Desktop/testing_data/Archive/spectralbench.JSON");
+      jsonObject              = (parser.parse(reader)).asInstanceOf[JSONObject]  
+     
+      //read test inputs: fastanchorList
+      var temp3 = jsonObject.get("fastanchor").asInstanceOf[JSONArray] 
+      fastanchorList = DenseVector.zeros[Int](temp3.size())
+      
+      for(i <- 0 until temp3.size()) {
+        fastanchorList(i) = temp3.get(i).toString().toInt
+      }
+      println("fastanchor read: " + fastanchorList.length)
+      
+      //read test inputs: recoverL2matrix
+      var temp4 = jsonObject.get("recoverL2A").asInstanceOf[JSONArray]
+      recoverL2matrix = DenseMatrix.zeros[Double](75,2632)
+      var colms = 1;
+      
+      for(i <- 0 until temp4.size()) {
+          var ccc = temp4.get(i).asInstanceOf[JSONArray]     
+          for(j <- 0 until ccc.size()) {
+            recoverL2matrix(i,j) = ccc.get(j).toString().toDouble
+          }
+          colms = ccc.size()
+      }
+      println("recoverL2 read: " + temp4.size() + "x" + colms)
+      
+    } catch {
+                  case e: Exception => println("Catch: " + e.printStackTrace())
+            }
+
+    (fastanchorList, recoverL2matrix)
+
+    } //end of readTestValuesfromJSON 
+  
+    
   //**************************** initialize() [Test] *************************
   def test_initialization() = {
     val model  = new STMModel()
     
-    val documents : List[DenseMatrix[Double]] = null
+    val documents : List[DenseMatrix[Double]] = filldocumentsfromJSON()
     //fill documents from simple triplet matrix
-    
     
     val config = new Configuration()
     //setup the config object
+    config.testmode = true
     
+    //model.initialize(documents, config)
     
-    model.initialize(documents, config)
+    var testvalues = readTestValuesfromJSON()
+    var recoverL2matrix : DenseMatrix[Double] = testvalues._2
+    var fastanchorList : DenseVector[Int] = testvalues._1
+
+    //read test inputs
+
+         
+
+    //compare fastanchor and recoverL2A with the initialized values 
+    //println("diff fastanchor : " + sum(abs(fastanchorList - DenseVector(model.fastanchorL.toArray))))
+    //println("diff recoverL2A : " + sum(abs(model.recoverL2M - recoverL2matrix)))
     
-    //test the initialized values 
-    //model.mu_g=(mu, gamma), model.sigma_g=sigma, model.beta_init=beta, model.lambda_g=lambda
-    
-    val test_mu : DenseMatrix[Double] = null
-    val test_sigma : DenseMatrix[Double] = null
-    val test_beta : DenseVector[DenseMatrix[Double]] = null
-    val test_lambda: DenseMatrix[Double] = null
-    
-    println("mu diff : " + sum(abs(test_mu - model.mu_g._1)))
-    println("sigma diff : " + sum(abs(test_sigma - model.sigma_g)))
-    for( i <- 0 to model.beta_init.length-1) {
-          println("beta diff of location :" + i + ": " + sum(abs(test_beta(i) - model.beta_init(i))))
-    }
-    println("lambda diff : " + sum(abs(test_lambda - model.lambda_g)))
     
   }
   

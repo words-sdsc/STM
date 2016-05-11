@@ -3,6 +3,9 @@ import breeze.linalg.DenseMatrix
 
 class Configuration {
   
+  //testmode
+  var testmode : Boolean = false
+  
   //dim
   var dim$K : Int = 0
   var dim$V : Int = 0

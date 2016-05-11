@@ -143,7 +143,7 @@ object spectral {
       
       if(verbose) { if(i%100 == 0) print("/") }
     }
-    if(verbose) print(".")
+    if(verbose) println(".exit from recoverL2.")
     
     //take each vector from the list and stack one above another (rbind)
     val weights  = DenseMatrix.vertcat((condprob.reverse).map(_.toDenseMatrix): _*)

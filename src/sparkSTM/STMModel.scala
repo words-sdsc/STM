@@ -12,6 +12,11 @@ import java.util.Iterator
 
  
 class STMModel {
+  //variables used in testing
+  var fastanchorL : List[Int] = null
+  var recoverL2M  : DenseMatrix[Double] = null
+  
+  //-------------------------
   
   var beta_init : DenseVector[DenseMatrix[Double]] = null
   
@@ -70,6 +75,7 @@ class STMModel {
      if(verbose) println("Finding anchor words...")
      if(K!=0) {
         anchor = spectral.fastAnchor(Q, K, verbose)
+        if(settings.testmode) this.fastanchorL = anchor
      } else {
         anchor = spectral.tsneAnchor(Q)
         K = anchor.length
@@ -80,7 +86,8 @@ class STMModel {
      //{•------» (3) recoverKL «------•}
      //**************************ıllıllı ıllıllı**************************
      if(verbose) println("Recovering Initialization ")
-     var beta0 = spectral.recoverL2(Q, anchor, wprob, verbose) //[?] $A
+     var beta0 = spectral.recoverL2(Q, anchor, wprob, verbose)
+     if(settings.testmode) this.recoverL2M = beta0
      
      if(keep != null) { 
        beta0 = spectral.refillZeros(K, V, beta0, keep, whichzero)
