@@ -145,10 +145,11 @@ object spectral {
         condprob ::= vec //adds to 0th position of list, hence reverse later
       } else {
         val y      = Qbar(i,::).t
+        //println("calling expgrad... for i = " + i)
         condprob ::= spectral.expgrad(X,y,XtX)
       }
       
-      if(verbose) { if(i%100 == 0) println(i + " of " + Qbar.rows) }
+      if(verbose) { if(i%100==0) println(i + " of " + Qbar.rows) }
     }
     
     if(verbose) println(".exit from recoverL2.")
@@ -177,7 +178,7 @@ object spectral {
     var sseOld : Double = java.lang.Double.POSITIVE_INFINITY
     var its       = 1
     
-    while(!converged || (its < maxIter)) {
+    while(!converged && (its < maxIter)) {
       var grad : DenseMatrix[Double] = ytX - (alpha*XtX)
       val sse  : Double  = sum(grad :* grad)
       grad          = grad :* (eta*2.0)

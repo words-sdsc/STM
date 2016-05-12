@@ -44,7 +44,7 @@ object tests {
           //take each vector from the list and stack one above another (rbind)
           var docmatrix = DenseMatrix.vertcat((singledoc.reverse).map(_.toDenseMatrix): _*)
           // append to List named documents
-          if(verbose) System.out.println("Doc #" + doc + " ... Lines=" + lines)
+          //if(verbose) System.out.println("Doc #" + doc + " ... Lines=" + lines)
           documents ::= docmatrix.t         
 
           //start new document
@@ -56,7 +56,7 @@ object tests {
       } 
           //last document processed separately due to exit from while loop      
           var docmatrix = DenseMatrix.vertcat((singledoc.reverse).map(_.toDenseMatrix): _*)
-          if(verbose) System.out.println("Doc #" + doc + " ... Lines=" + lines)
+          //if(verbose) System.out.println("Doc #" + doc + " ... Lines=" + lines)
           documents ::= docmatrix.t 
           if(N != documents.length) System.out.println("#documents mismatch : check N")
           System.out.println("Read all documents; N = " + documents.length)
@@ -64,7 +64,7 @@ object tests {
       documents.reverse
     }
     
-    def readSpectralTestValuesfromJSON(): (DenseVector[Int], DenseMatrix[Double]) = {
+    def readSpectralTestValuesfromJSON(verbose : Boolean): (DenseVector[Int], DenseMatrix[Double]) = {
       var fastanchorList : DenseVector[Int] = null
       var recoverL2matrix : DenseMatrix[Double] = null
         
@@ -82,7 +82,7 @@ object tests {
       for(i <- 0 until temp3.size()) {
         fastanchorList(i) = temp3.get(i).toString().toInt
       }
-      println("fastanchor read: " + fastanchorList.length)
+      if(verbose) println("fastanchor read: " + fastanchorList.length)
       
       //read test inputs: recoverL2matrix
       var temp4 = jsonObject.get("recoverL2A").asInstanceOf[JSONArray]
@@ -96,7 +96,7 @@ object tests {
           }
           colms = ccc.size()
       }
-      println("recoverL2 read: " + temp4.size() + "x" + colms)
+      if(verbose) println("recoverL2 read: " + temp4.size() + "x" + colms)
       
     } catch {
                   case e: Exception => println("Catch: " + e.printStackTrace())
@@ -125,7 +125,7 @@ object tests {
     
     model.initialize(documents, config)
     
-    var testvalues = readSpectralTestValuesfromJSON()
+    var testvalues = readSpectralTestValuesfromJSON(config.init$verbose)
     var recoverL2matrix : DenseMatrix[Double] = testvalues._2
     var fastanchorList : DenseVector[Int] = testvalues._1
 
@@ -134,9 +134,11 @@ object tests {
          
 
     //compare fastanchor and recoverL2A with the initialized values 
-    //println("diff fastanchor : " + sum(abs(fastanchorList - DenseVector(model.fastanchorL.toArray))))
-    //println("diff recoverL2A : " + sum(abs(model.recoverL2M - recoverL2matrix)))
-    
+    println("diff fastanchor : " + sum(abs(fastanchorList - DenseVector(model.fastanchorL.toArray))))
+    println("diff recoverL2A : " + sum(abs(model.recoverL2M - recoverL2matrix)))
+    println("recoverL2A.rows, cols : " + model.recoverL2M.rows +","+ model.recoverL2M.rows )
+    println("json recoverL2matrix rows,cols : " + recoverL2matrix.rows +","+recoverL2matrix.cols)
+
     
   }
   

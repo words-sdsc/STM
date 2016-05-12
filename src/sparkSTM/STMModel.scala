@@ -77,7 +77,7 @@ class STMModel {
         anchor = spectral.fastAnchor(Q, K, verbose)
         if(settings.testmode) {
           this.fastanchorL = anchor
-          System.out.println("fastAnchor calculated ... updated model.fastanchorL")
+          System.out.println("\nfastAnchor calculated ... updated model.fastanchorL")
         }
      } else {
         anchor = spectral.tsneAnchor(Q)
@@ -90,13 +90,14 @@ class STMModel {
      //**************************ıllıllı ıllıllı**************************
      if(verbose) println("Recovering Initialization ")
      var beta0 = spectral.recoverL2(Q, anchor, wprob, verbose)
-     if(settings.testmode) {
-          this.recoverL2M = beta0
-          System.out.println("recoverL2 calculated ...updated model.recoverL2M")
-     }
+     
      
      if(keep != null) { 
        beta0 = spectral.refillZeros(K, V, beta0, keep, whichzero)
+       if(settings.testmode) {
+          this.recoverL2M = beta0
+          System.out.println("recoverL2 calculated ...updated model.recoverL2M")
+       }
      }
      
      //**************************ıllıllı ıllıllı**************************
@@ -128,8 +129,8 @@ class STMModel {
     //Spark
     val conf   = new SparkConf().setAppName("Spark Pi").setMaster("local")
     val spark  = new SparkContext(conf)
-    val numPartitions = 10 //number of partitions
-    val documentsRDD: RDD[(DenseMatrix[Double], Int)] = spark.parallelize(documents.zipWithIndex, numPartitions)
+    //val numPartitions = 10 //number of partitions
+    val documentsRDD: RDD[(DenseMatrix[Double], Int)] = spark.parallelize(documents.zipWithIndex)//, numPartitions)
       
     //get copy of global parameters
     
