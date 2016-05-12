@@ -114,6 +114,7 @@ object tests {
     val config = new Configuration()
     //setup the config object
     config.testmode = true
+    config.init$verbose = true
     config.dim$K = 75
     config.dim$V = 2632
     config.dim$N = 5000

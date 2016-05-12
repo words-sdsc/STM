@@ -75,7 +75,10 @@ class STMModel {
      if(verbose) println("Finding anchor words...")
      if(K!=0) {
         anchor = spectral.fastAnchor(Q, K, verbose)
-        if(settings.testmode) this.fastanchorL = anchor
+        if(settings.testmode) {
+          this.fastanchorL = anchor
+          System.out.println("fastAnchor calculated ... updated model.fastanchorL")
+        }
      } else {
         anchor = spectral.tsneAnchor(Q)
         K = anchor.length
@@ -87,7 +90,10 @@ class STMModel {
      //**************************ıllıllı ıllıllı**************************
      if(verbose) println("Recovering Initialization ")
      var beta0 = spectral.recoverL2(Q, anchor, wprob, verbose)
-     if(settings.testmode) this.recoverL2M = beta0
+     if(settings.testmode) {
+          this.recoverL2M = beta0
+          System.out.println("recoverL2 calculated ...updated model.recoverL2M")
+     }
      
      if(keep != null) { 
        beta0 = spectral.refillZeros(K, V, beta0, keep, whichzero)

@@ -7,6 +7,7 @@ import breeze.numerics.{abs, sqrt, exp}
 object spectral {
   
   def gram(mat: SparseMatrix) : DenseMatrix[Double] = {
+    
     val nd = rowSums(mat)
     val indx = nd.findAll { x => x >=2 }
     val matfilter = mat.select(indx.toArray, (0 to mat.columns()-1).toArray)
@@ -16,7 +17,7 @@ object spectral {
     //convert mat to densematrix
     val dmat = DenseMatrix.zeros[Double](matfilter.rows(), matfilter.columns())
     for(i <- 0 to matfilter.columns()-1) {
-      dmat(::, i) := matfilter.getColumn(i).asInstanceOf[DenseVector[Double]]
+      dmat(::, i) := DenseVector(matfilter.getColumn(i).toDenseVector().toArray()) //.asInstanceOf[DenseVector[Double]]
     }
     
     /*		val G :DenseMatrix[Double] = (dmat(::, *) :/ divisor) 	//divide each col
@@ -131,6 +132,12 @@ object spectral {
     val XtX       = X * X.t
     var condprob  = List[DenseVector[Double]]()
     
+    def f(i: Int) = {
+      
+    }
+    
+    //(0 to Qbar.rows-1).par.foreach { v => f(v) }
+    
     for(i <- 0 to Qbar.rows-1) {
       if(anchor.contains(i)) {
         val vec    = DenseVector.zeros[Double](XtX.rows)
@@ -141,8 +148,9 @@ object spectral {
         condprob ::= spectral.expgrad(X,y,XtX)
       }
       
-      if(verbose) { if(i%100 == 0) print("/") }
+      if(verbose) { if(i%100 == 0) println(i + " of " + Qbar.rows) }
     }
+    
     if(verbose) println(".exit from recoverL2.")
     
     //take each vector from the list and stack one above another (rbind)
