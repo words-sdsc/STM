@@ -82,7 +82,7 @@ object tests {
       for(i <- 0 until temp3.size()) {
         fastanchorList(i) = temp3.get(i).toString().toInt
       }
-      if(verbose) println("fastanchor read: " + fastanchorList.length)
+      //if(verbose) println("fastanchor read: " + fastanchorList.length)
       
       //read test inputs: recoverL2matrix
       var temp4 = jsonObject.get("recoverL2A").asInstanceOf[JSONArray]
@@ -96,7 +96,7 @@ object tests {
           }
           colms = ccc.size()
       }
-      if(verbose) println("recoverL2 read: " + temp4.size() + "x" + colms)
+      //if(verbose) println("recoverL2 read: " + temp4.size() + "x" + colms)
       
     } catch {
                   case e: Exception => println("Catch: " + e.printStackTrace())
@@ -129,16 +129,13 @@ object tests {
     var recoverL2matrix : DenseMatrix[Double] = testvalues._2
     var fastanchorList : DenseVector[Int] = testvalues._1
 
-    //read test inputs
-
-         
-
     //compare fastanchor and recoverL2A with the initialized values 
-    println("diff fastanchor : " + sum(abs(fastanchorList - DenseVector(model.fastanchorL.toArray))))
-    println("diff recoverL2A : " + sum(abs(model.recoverL2M - recoverL2matrix)))
-    println("recoverL2A.rows, cols : " + model.recoverL2M.rows +","+ model.recoverL2M.rows )
-    println("json recoverL2matrix rows,cols : " + recoverL2matrix.rows +","+recoverL2matrix.cols)
-
+    println("sums fastanchor ScalaModel,JSON : " + sum(abs(DenseVector(model.fastanchorL.toArray))) +","+ sum(abs(fastanchorList)))
+    println("sums recoverL2A ScalaModel,JSON : " + sum(abs(model.recoverL2M)) +","+ sum(abs(recoverL2matrix)))
+    
+    println("diff fastanchor : " + sum(abs(DenseVector(model.fastanchorL.toArray) :- fastanchorList))/fastanchorList.length)
+    println("diff recoverL2A : " + sum(abs(model.recoverL2M :- recoverL2matrix))/(recoverL2matrix.rows*recoverL2matrix.cols))
+    
     
   }
   

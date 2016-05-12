@@ -56,7 +56,7 @@ class STMModel {
      var whichzero: Seq[Int] = null
      
      if(!all(Qsums)) {
-       //there are some zeros
+       //println("//there are some zeros")
        whichzero = spectral.whichZeros(Qsums) //which indices have zero in the input vector
        keep = (0 to Qsums.length-1 toList) diff whichzero.toList
        Q = Q.delete(whichzero, Axis._0)
@@ -93,6 +93,7 @@ class STMModel {
      
      
      if(keep != null) { 
+       //if(verbose) println("keep != null refilling zeros")
        beta0 = spectral.refillZeros(K, V, beta0, keep, whichzero)
        if(settings.testmode) {
           this.recoverL2M = beta0

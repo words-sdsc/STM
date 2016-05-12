@@ -12,7 +12,7 @@ object spectral {
     val indx = nd.findAll { x => x >=2 }
     val matfilter = mat.select(indx.toArray, (0 to mat.columns()-1).toArray)
     val ndfilter = nd(indx).toDenseVector
-    val divisor  = ndfilter :* (ndfilter :- 1.0)
+    val divisor : DenseVector[Double] = ndfilter :* (ndfilter :- 1.0)
     
     //convert mat to densematrix
     val dmat = DenseMatrix.zeros[Double](matfilter.rows(), matfilter.columns())
@@ -22,7 +22,8 @@ object spectral {
     
     /*		val G :DenseMatrix[Double] = (dmat(::, *) :/ divisor) 	//divide each col
       		val F : DenseVector[Double] = sum((dmat(::, *) :/ divisor), Axis._0) */  //Sum down each column (giving a row vector)
-    val Htilde = dmat(::, *) :/ sqrt(divisor)        //divide each col
+    val sq     = sqrt(divisor)
+    val Htilde = dmat(::, *) :/ sq        //divide each col
     val Hhat   = diag( sum((dmat(::, *) :/ divisor), Axis._0).toDenseVector)   
     val Q : DenseMatrix[Double] = (Htilde.t * Htilde) - Hhat
   
@@ -64,7 +65,7 @@ object spectral {
   //return indices which are zero
   def whichZeros(vec : DenseVector[Double]) : Seq[Int] = {
             var zeroIndices = List[Int]()
-            val iter = vec.foreachPair( (i, v)  => {if(v==0) { zeroIndices = i :: zeroIndices } } ) 
+            val iter = vec.foreachPair( (i, v)  => {if(v==0.0) { zeroIndices = i :: zeroIndices } } ) 
             zeroIndices
   }
   
@@ -92,9 +93,11 @@ object spectral {
        
        //reference: http://lampsvn.epfl.ch/trac/scala/browser/scala/tags/R_2_7_4_final/src/library/scala/Math.scala?view=markup
        betaNew(::, whichZeros) := java.lang.Double.MIN_VALUE 
+       //println("java min value: " + java.lang.Double.MIN_VALUE)
        
        //divide every col by denominator=row sums
        betaNew(::,*) :/ sum(betaNew(*, ::))
+      
  }
   
   def fastAnchor(Qbar: DenseMatrix[Double], K: Int, verbose: Boolean): List[Int] = {
@@ -107,7 +110,7 @@ object spectral {
       basis                ::= indx               //adds to 0th position of list, hence reverse later
       
       val maxval           = rowSquaredSums.max
-      val normalizer       = 1/sqrt(maxval)
+      val normalizer       = 1.0/sqrt(maxval)
       
       Qbar(indx, ::) :*= normalizer
       
@@ -145,19 +148,18 @@ object spectral {
         condprob ::= vec //adds to 0th position of list, hence reverse later
       } else {
         val y      = Qbar(i,::).t
-        //println("calling expgrad... for i = " + i)
         condprob ::= spectral.expgrad(X,y,XtX)
       }
       
-      if(verbose) { if(i%100==0) println(i + " of " + Qbar.rows) }
+      if(verbose) { if(i%2000==0) println(i + " of " + Qbar.rows) }
     }
     
-    if(verbose) println(".exit from recoverL2.")
+    //if(verbose) println(".exit from recoverL2.")
     
     //take each vector from the list and stack one above another (rbind)
     val weights  = DenseMatrix.vertcat((condprob.reverse).map(_.toDenseMatrix): _*)
     val A        = weights(::,*) :* wprob      //[check] multiply each col of weights by vec wprob
-    A.t(::,*) / sum(A, Axis._0).toDenseVector  //sum gives row vector = colSums
+    A.t(::,*) :/ sum(A, Axis._0).toDenseVector  //sum gives row vector = colSums
     //last line is beta
   }
   
@@ -166,7 +168,7 @@ object spectral {
     
     val tol     = 1e-7
     val maxIter = 500
-    val filler : Double = 1/X.rows
+    val filler : Double = 1.0/(X.rows)
     var alpha   = DenseMatrix.fill(1, X.rows){filler}                            //row-vector
     
     val ytX = new DenseMatrix(1, X.rows , data=(y.t * X.t).t.toArray)            //row-vector
