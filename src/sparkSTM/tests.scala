@@ -96,7 +96,7 @@ object tests {
           }
           colms = ccc.size()
       }
-      //if(verbose) println("recoverL2 read: " + temp4.size() + "x" + colms)
+      if(verbose) println("recoverL2 read: " + temp4.size() + "x" + colms)
       
     } catch {
                   case e: Exception => println("Catch: " + e.printStackTrace())
@@ -133,10 +133,13 @@ object tests {
     println("sums fastanchor ScalaModel,JSON : " + sum(abs(DenseVector(model.fastanchorL.toArray))) +","+ sum(abs(fastanchorList)))
     println("sums recoverL2A ScalaModel,JSON : " + sum(abs(model.recoverL2M)) +","+ sum(abs(recoverL2matrix)))
     
-    println("diff fastanchor : " + sum(abs(DenseVector(model.fastanchorL.toArray) :- fastanchorList))/fastanchorList.length)
-    println("diff recoverL2A : " + sum(abs(model.recoverL2M :- recoverL2matrix))/(recoverL2matrix.rows*recoverL2matrix.cols))
+    //println("diff fastanchor : " + sum(abs(DenseVector(model.fastanchorL.toArray) :- fastanchorList))) // /fastanchorList.length)
+    //println("diff recoverL2A : " + sum(abs(model.recoverL2M :- recoverL2matrix)))  // /(recoverL2matrix.rows*recoverL2matrix.cols))
     
-    
+    println(model.fastanchorL.zip(fastanchorList.toArray))
+    //column1
+    //println(model.recoverL2M(::,0).toScalaVector().zip(recoverL2matrix(0,::).t.toArray))
+    //println(model.recoverL2M(model.recoverL2M.findAll { x => x > 4.9E-324 }).toArray)
   }
   
   //**************************** hessPhiBound [Test] *************************

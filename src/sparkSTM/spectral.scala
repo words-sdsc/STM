@@ -64,14 +64,15 @@ object spectral {
   
   //return indices which are zero
   def whichZeros(vec : DenseVector[Double]) : Seq[Int] = {
-            var zeroIndices = List[Int]()
-            val iter = vec.foreachPair( (i, v)  => {if(v==0.0) { zeroIndices = i :: zeroIndices } } ) 
+            var zeroIndices : List[Int] = Nil
+            val iter = vec.foreachPair( (i, v)  => {if(v == 0.0) { zeroIndices = i :: zeroIndices } } ) 
+            println("zero indices found at : "+ zeroIndices.length)
             zeroIndices
   }
   
   //return indices that have value >= threshold
   def whichThreshold(vec : DenseVector[Double], thres: Double) : Array[Int] = {
-            var whichIndices = List[Int]()
+            var whichIndices : List[Int] = Nil
             val iter = vec.foreachPair( (i, v)  => {if(v >= thres) { whichIndices = i :: whichIndices } } ) 
             whichIndices.toArray
   }

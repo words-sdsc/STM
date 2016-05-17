@@ -49,14 +49,14 @@ class STMModel {
      //**************************ıllıllı ıllıllı**************************
      val mat : SparseMatrix = spectral.docsToSparseMatrix(documents)
      var wprob : DenseVector[Double] = spectral.colSums(mat) 
-     wprob /= sum(wprob)
+     wprob :/= sum(wprob)
      var Q : DenseMatrix[Double] = spectral.gram(mat)
      var Qsums : DenseVector[Double] = sum(Q(*, ::)) //sum of each row
      var keep: Seq[Int] = null
      var whichzero: Seq[Int] = null
      
      if(!all(Qsums)) {
-       //println("//there are some zeros")
+       println("//there are some zeros")
        whichzero = spectral.whichZeros(Qsums) //which indices have zero in the input vector
        keep = (0 to Qsums.length-1 toList) diff whichzero.toList
        Q = Q.delete(whichzero, Axis._0)
