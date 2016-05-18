@@ -47,8 +47,10 @@ class STMModel {
      //**************************ıllıllı ıllıllı**************************
      //{•------» (1) Prep the Gram matrix «------•}
      //**************************ıllıllı ıllıllı**************************
-     val mat : SparseMatrix = spectral.docsToSparseMatrix(documents)
+     val mat : SparseMatrix = spectral.docsToSparseMatrix(documents, N,V)
+     println("N = rows = " + mat.rows() +" V = cols = " +mat.columns()) 
      var wprob : DenseVector[Double] = spectral.colSums(mat) 
+     println("wprob.len = " + wprob.length)
      wprob :/= sum(wprob)
      var Q : DenseMatrix[Double] = spectral.gram(mat)
      var Qsums : DenseVector[Double] = sum(Q(*, ::)) //sum of each row
@@ -75,13 +77,15 @@ class STMModel {
      if(verbose) println("Finding anchor words...")
      if(K!=0) {
         anchor = spectral.fastAnchor(Q, K, verbose)
-        if(settings.testmode) {
-          this.fastanchorL = anchor
-          System.out.println("\nfastAnchor calculated ... updated model.fastanchorL")
-        }
+        
      } else {
         anchor = spectral.tsneAnchor(Q)
         K = anchor.length
+     }
+     
+     if(settings.testmode) {
+          this.fastanchorL = anchor
+          System.out.println("\nfastAnchor calculated ... updated model.fastanchorL")
      }
      
      
@@ -95,10 +99,11 @@ class STMModel {
      if(keep != null) { 
        //if(verbose) println("keep != null refilling zeros")
        beta0 = spectral.refillZeros(K, V, beta0, keep, whichzero)
-       if(settings.testmode) {
+     }
+     
+     if(settings.testmode) {
           this.recoverL2M = beta0
           System.out.println("recoverL2 calculated ...updated model.recoverL2M")
-       }
      }
      
      //**************************ıllıllı ıllıllı**************************

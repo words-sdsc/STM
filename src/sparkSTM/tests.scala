@@ -24,7 +24,9 @@ object tests {
   
   //****************************  auxillary functions *************************
   
+    //this function assumes that col index start with 1 and fixes it to start from 0
     def filldocumentsfromJSON(N : Int, verbose: Boolean): List[DenseMatrix[Double]] = {
+    //converts 1 indexed docs to start from 0 index
       var documents : List[DenseMatrix[Double]] = Nil
       
       var csvreader : CSVReader = new CSVReader(new FileReader("/Users/aloksingh/Desktop/testing_data/Archive/doctriplet.csv"))
@@ -37,27 +39,29 @@ object tests {
       while ( {nextLine = csvreader.readNext();  nextLine!= null}  ) {
         // nextLine[] is an array of values from the line
         if(nextLine(0).toInt == doc) {
-          singledoc ::= DenseVector(nextLine(1).toDouble, nextLine(2).toDouble)
+          singledoc ::= DenseVector(nextLine(1).toDouble-1, nextLine(2).toDouble) //-1 to move 1 indexing to start frm 0
           lines = lines +1
         } else {
         
-          //take each vector from the list and stack one above another (rbind)
+          //prep matrix for this doc: take each vector from the list and stack one above another (rbind)
           var docmatrix = DenseMatrix.vertcat((singledoc.reverse).map(_.toDenseMatrix): _*)
-          // append to List named documents
+          // append this document matrix to List named documents
           //if(verbose) System.out.println("Doc #" + doc + " ... Lines=" + lines)
           documents ::= docmatrix.t         
 
           //start new document
           doc = doc + 1
           lines = 0
-          singledoc = Nil
-          singledoc ::= DenseVector(nextLine(1).toDouble, nextLine(2).toDouble)
+          singledoc = Nil //restart new document matrix
+          singledoc ::= DenseVector(nextLine(1).toDouble-1, nextLine(2).toDouble)   //-1 to move 1 indexing to start frm 0
         }
       } 
           //last document processed separately due to exit from while loop      
-          var docmatrix = DenseMatrix.vertcat((singledoc.reverse).map(_.toDenseMatrix): _*)
+          var lastdocmatrix = DenseMatrix.vertcat((singledoc.reverse).map(_.toDenseMatrix): _*)
           //if(verbose) System.out.println("Doc #" + doc + " ... Lines=" + lines)
-          documents ::= docmatrix.t 
+          
+          //append last document
+          documents ::= lastdocmatrix.t 
           if(N != documents.length) System.out.println("#documents mismatch : check N")
           System.out.println("Read all documents; N = " + documents.length)
 
@@ -106,8 +110,7 @@ object tests {
 
     } //end of readTestValuesfromJSON 
   
-    
-  //**************************** initialize() [Test] *************************
+   //**************************** initialize() [Test] *************************
   def test_initialization() = {
     val model  = new STMModel()
     
@@ -120,6 +123,7 @@ object tests {
     config.dim$N = 5000
     config.dim$A = 1
     
+    //this function assumes that col index start with 1 and fixes it to start from 0
     val documents : List[DenseMatrix[Double]] = filldocumentsfromJSON(config.dim$N, config.init$verbose)
     //fill documents from simple triplet matrix
     
@@ -130,7 +134,7 @@ object tests {
     var fastanchorList : DenseVector[Int] = testvalues._1
 
     //compare fastanchor and recoverL2A with the initialized values 
-    println("sums fastanchor ScalaModel,JSON : " + sum(abs(DenseVector(model.fastanchorL.toArray))) +","+ sum(abs(fastanchorList)))
+    //println("sums fastanchor ScalaModel,JSON : " + sum(abs(DenseVector(model.fastanchorL.toArray))) +","+ sum(abs(fastanchorList)))
     println("sums recoverL2A ScalaModel,JSON : " + sum(abs(model.recoverL2M)) +","+ sum(abs(recoverL2matrix)))
     
     //println("diff fastanchor : " + sum(abs(DenseVector(model.fastanchorL.toArray) :- fastanchorList))) // /fastanchorList.length)
@@ -138,7 +142,15 @@ object tests {
     
     println(model.fastanchorL.zip(fastanchorList.toArray))
     //column1
-    //println(model.recoverL2M(::,0).toScalaVector().zip(recoverL2matrix(0,::).t.toArray))
+    
+    /*for( i <- 0 until model.recoverL2M.rows) {
+    //val i = 74
+    var last = (model.recoverL2M(i,::).t.argsort.toList.zip(recoverL2matrix(i,::).t.argsort.toIterable)).takeRight(5).reverse
+    //print indices of max values
+    println("Row#"+i+":"+last.map( tup =>  (tup._1, tup._2)))
+    //print max values themselves
+    //println("Row#"+i+":"+last.map( tup =>  (model.recoverL2M(i,tup._1), recoverL2matrix(i,tup._2))))
+    }*/
     //println(model.recoverL2M(model.recoverL2M.findAll { x => x > 4.9E-324 }).toArray)
   }
   

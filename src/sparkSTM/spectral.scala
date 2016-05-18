@@ -7,7 +7,7 @@ import breeze.numerics.{abs, sqrt, exp}
 object spectral {
   
   def gram(mat: SparseMatrix) : DenseMatrix[Double] = {
-    
+    //val mat = smat.toDenseMatrix()
     val nd = rowSums(mat)
     val indx = nd.findAll { x => x >=2 }
     val matfilter = mat.select(indx.toArray, (0 to mat.columns()-1).toArray)
@@ -30,18 +30,20 @@ object spectral {
     Q
     }
  
-  def docsToSparseMatrix(documents: List[DenseMatrix[Double]]) : SparseMatrix = {    
+  def docsToSparseMatrix(documents: List[DenseMatrix[Double]], N: Int, V: Int) : SparseMatrix = {    
     val counts: List[Int]      = documents.map { x => x.cols }  //no of non-zero entries per doc
     val rowPointers: List[Int] = counts.scanLeft(0)(_ + _)      //convert to CRS format
-    val colIndices: List[Int]  = documents.map{ x => x(0,::).t.toArray }.flatMap {y => y}.map{t => t.toInt}
+    val colIndices : List[Int]  = documents.map{ x => x(0,::).t.toArray }.flatMap {y => y}.map{t => t.toInt}
     val vals: List[Double]     = documents.map{ x => x(1,::).t.toArray }.flatMap {y => y}
-     
-     new SparseMatrix(documents.length,colIndices.max,rowPointers.last, vals.toArray, colIndices.toArray, rowPointers.toArray)
+    
+    new SparseMatrix(N                 ,V             ,rowPointers.last, vals.toArray, colIndices.toArray, rowPointers.toArray)
+    //new SparseMatrix(documents.length,colIndices.max,rowPointers.last, vals.toArray, colIndices.toArray, rowPointers.toArray)
      //int rows, int columns, int cardinality, double[] values, int[] columnIndices, int[] rowPointers   
   }
   
   def colSums(mat : SparseMatrix) : DenseVector[Double] = {
             //val iter = mat.iteratorOrNonZeroColumns()
+            //val mat = smat.toDenseMatrix()
             val colSum = DenseVector.zeros[Double](mat.columns())
             var j =0
             while (j < mat.columns()) {
@@ -53,6 +55,7 @@ object spectral {
   }
   
   def rowSums(mat : SparseMatrix) : DenseVector[Double] = {
+            //val mat = smat.toDenseMatrix()
             val rowSum = DenseVector.zeros[Double](mat.rows())
             var i = 0
             while (i < mat.rows()) { 
@@ -149,6 +152,7 @@ object spectral {
         condprob ::= vec //adds to 0th position of list, hence reverse later
       } else {
         val y      = Qbar(i,::).t
+        //[opti] XtX is common to all calls 
         condprob ::= spectral.expgrad(X,y,XtX)
       }
       
@@ -167,8 +171,8 @@ object spectral {
   def expgrad(X : DenseMatrix[Double],y: DenseVector[Double],XtX : DenseMatrix[Double]) : DenseVector[Double] = {
     //note: DenseVector is a col vector; currently y here is passed as a col-vector
     
-    val tol     = 1e-7
-    val maxIter = 500
+    val tol     = 1e-30
+    val maxIter = 5000
     val filler : Double = 1.0/(X.rows)
     var alpha   = DenseMatrix.fill(1, X.rows){filler}                            //row-vector
     
@@ -181,13 +185,13 @@ object spectral {
     var sseOld : Double = java.lang.Double.POSITIVE_INFINITY
     var its       = 1
     
-    while(!converged && (its < maxIter)) {
+    while((!converged) && (its < maxIter)) {
       var grad : DenseMatrix[Double] = ytX - (alpha*XtX)
       val sse  : Double  = sum(grad :* grad)
       grad          = grad :* (eta*2.0)
       val maxderiv  = grad.max
       
-      alpha = alpha :* exp(grad - maxderiv)
+      alpha = alpha :* exp(grad :- maxderiv)
       //[check] supposed to be element wise multiplication with alpha ?
       
       alpha     = alpha / sum(alpha)
@@ -195,6 +199,7 @@ object spectral {
       sseOld    = sse
       its      += 1
     }
+    //print("_.")
     
     alpha.toDenseVector
     //return(list(par=as.numeric(alpha), its=its, converged=converged,entropy=entropy, log.sse=log(sse)))
