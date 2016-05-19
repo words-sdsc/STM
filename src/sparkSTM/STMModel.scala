@@ -48,17 +48,17 @@ class STMModel {
      //{•------» (1) Prep the Gram matrix «------•}
      //**************************ıllıllı ıllıllı**************************
      val mat : SparseMatrix = spectral.docsToSparseMatrix(documents, N,V)
-     println("N = rows = " + mat.rows() +" V = cols = " +mat.columns()) 
+     println("N = mat.rows = " + mat.rows() +" V = mat.cols = " +mat.columns()) 
      var wprob : DenseVector[Double] = spectral.colSums(mat) 
      println("wprob.len = " + wprob.length)
      wprob :/= sum(wprob)
      var Q : DenseMatrix[Double] = spectral.gram(mat)
      var Qsums : DenseVector[Double] = sum(Q(*, ::)) //sum of each row
-     var keep: Seq[Int] = null
+     var keep : Seq[Int] = null
      var whichzero: Seq[Int] = null
      
      if(!all(Qsums)) {
-       println("//there are some zeros")
+       if(verbose) println("//there are some zeros ..whichzero(), keep, dropelements()")
        whichzero = spectral.whichZeros(Qsums) //which indices have zero in the input vector
        keep = (0 to Qsums.length-1 toList) diff whichzero.toList
        Q = Q.delete(whichzero, Axis._0)
@@ -92,27 +92,28 @@ class STMModel {
      //**************************ıllıllı ıllıllı**************************
      //{•------» (3) recoverKL «------•}
      //**************************ıllıllı ıllıllı**************************
-     if(verbose) println("Recovering Initialization ")
+     if(verbose) println("Recovering Initialization .. recoverL2() ")
      var beta0 = spectral.recoverL2(Q, anchor, wprob, verbose)
      
      
      if(keep != null) { 
-       //if(verbose) println("keep != null refilling zeros")
+       if(verbose) println("keep != null .. refillZeros() in beta")
        beta0 = spectral.refillZeros(K, V, beta0, keep, whichzero)
      }
      
      if(settings.testmode) {
           this.recoverL2M = beta0
-          System.out.println("recoverL2 calculated ...updated model.recoverL2M")
+          System.out.println("Initialization Complete .. recoverL2()")
      }
      
      //**************************ıllıllı ıllıllı**************************
      //{•------» (4) generate other parameters «------•}
      //**************************ıllıllı ıllıllı**************************
+     if(verbose) println("Generating other parameters")
      val mu = DenseMatrix.zeros[Double](K-1, 1)
      val sigma = diag(DenseVector.fill(K-1){20.0})
      val lambda = DenseMatrix.zeros[Double](N, K-1)
-     if(verbose) println("Initialization complete")
+     
      
      //assign beta for each aspect
      val beta = DenseVector.fill(A){beta0}  //List of Matrices

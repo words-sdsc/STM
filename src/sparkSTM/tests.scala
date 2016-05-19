@@ -100,7 +100,7 @@ object tests {
           }
           colms = ccc.size()
       }
-      if(verbose) println("recoverL2 read: " + temp4.size() + "x" + colms)
+      if(verbose) println("recoverL2 read (JSON): " + temp4.size() + "x" + colms)
       
     } catch {
                   case e: Exception => println("Catch: " + e.printStackTrace())
@@ -134,24 +134,21 @@ object tests {
     var fastanchorList : DenseVector[Int] = testvalues._1
 
     //compare fastanchor and recoverL2A with the initialized values 
-    //println("sums fastanchor ScalaModel,JSON : " + sum(abs(DenseVector(model.fastanchorL.toArray))) +","+ sum(abs(fastanchorList)))
     println("sums recoverL2A ScalaModel,JSON : " + sum(abs(model.recoverL2M)) +","+ sum(abs(recoverL2matrix)))
+    println("diff recoverL2A ScalaModel,JSON : " + sum(abs(model.recoverL2M - recoverL2matrix) ) )
     
-    //println("diff fastanchor : " + sum(abs(DenseVector(model.fastanchorL.toArray) :- fastanchorList))) // /fastanchorList.length)
-    //println("diff recoverL2A : " + sum(abs(model.recoverL2M :- recoverL2matrix)))  // /(recoverL2matrix.rows*recoverL2matrix.cols))
+    println("\nfastanchor: "+model.fastanchorL.zip(fastanchorList.toArray)+"\n")
     
-    println(model.fastanchorL.zip(fastanchorList.toArray))
-    //column1
-    
-    /*for( i <- 0 until model.recoverL2M.rows) {
-    //val i = 74
+    for( i <- 0 until model.recoverL2M.rows) {
     var last = (model.recoverL2M(i,::).t.argsort.toList.zip(recoverL2matrix(i,::).t.argsort.toIterable)).takeRight(5).reverse
     //print indices of max values
-    println("Row#"+i+":"+last.map( tup =>  (tup._1, tup._2)))
+        println("Row#"+i+":"+last.map( tup =>  (tup._1, tup._2)))
+    
     //print max values themselves
-    //println("Row#"+i+":"+last.map( tup =>  (model.recoverL2M(i,tup._1), recoverL2matrix(i,tup._2))))
-    }*/
-    //println(model.recoverL2M(model.recoverL2M.findAll { x => x > 4.9E-324 }).toArray)
+        println("Row#"+i+":"+last.map( tup =>  (model.recoverL2M(i,tup._1).formatted("%07.5f"), recoverL2matrix(i,tup._2).formatted("%07.5f"))))
+        println()
+    }
+    
   }
   
   //**************************** hessPhiBound [Test] *************************

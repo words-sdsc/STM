@@ -10,9 +10,9 @@ object spectral {
     //val mat = smat.toDenseMatrix()
     val nd = rowSums(mat)
     val indx = nd.findAll { x => x >=2 }
-    val matfilter = mat.select(indx.toArray, (0 to mat.columns()-1).toArray)
+    val matfilter = mat.select(indx.toArray, (0 to mat.columns()-1).toArray).copy()
     val ndfilter = nd(indx).toDenseVector
-    val divisor : DenseVector[Double] = ndfilter :* (ndfilter :- 1.0)
+    val divisor : DenseVector[Double] = ndfilter :* (ndfilter - 1.0)
     
     //convert mat to densematrix
     val dmat = DenseMatrix.zeros[Double](matfilter.rows(), matfilter.columns())
@@ -22,9 +22,9 @@ object spectral {
     
     /*		val G :DenseMatrix[Double] = (dmat(::, *) :/ divisor) 	//divide each col
       		val F : DenseVector[Double] = sum((dmat(::, *) :/ divisor), Axis._0) */  //Sum down each column (giving a row vector)
-    val sq     = sqrt(divisor)
-    val Htilde = dmat(::, *) :/ sq        //divide each col
-    val Hhat   = diag( sum((dmat(::, *) :/ divisor), Axis._0).toDenseVector)   
+    val sq : DenseVector[Double] = sqrt(divisor)
+    val Htilde = dmat(::, *) / sq        //divide each col
+    val Hhat   = diag(sum((dmat(::, *) / divisor), Axis._0).toDenseVector)   
     val Q : DenseMatrix[Double] = (Htilde.t * Htilde) - Hhat
   
     Q
@@ -137,17 +137,13 @@ object spectral {
 
     val X         = Qbar(anchor, ::).toDenseMatrix
     val XtX       = X * X.t
-    var condprob  = List[DenseVector[Double]]()
-    
-    def f(i: Int) = {
-      
-    }
-    
+    var condprob  : List[DenseVector[Double]] = Nil
+           
     //(0 to Qbar.rows-1).par.foreach { v => f(v) }
     
     for(i <- 0 to Qbar.rows-1) {
       if(anchor.contains(i)) {
-        val vec    = DenseVector.zeros[Double](XtX.rows)
+        val vec    = DenseVector.zeros[Double](XtX.rows)  //K
         vec(anchor.indexOf(i)) = 1.0
         condprob ::= vec //adds to 0th position of list, hence reverse later
       } else {
@@ -162,17 +158,22 @@ object spectral {
     //if(verbose) println(".exit from recoverL2.")
     
     //take each vector from the list and stack one above another (rbind)
-    val weights  = DenseMatrix.vertcat((condprob.reverse).map(_.toDenseMatrix): _*)
+    val weights  = DenseMatrix.vertcat((condprob.reverse).map(_.toDenseMatrix): _*)  //VxK
     val A        = weights(::,*) :* wprob      //[check] multiply each col of weights by vec wprob
-    A.t(::,*) :/ sum(A, Axis._0).toDenseVector  //sum gives row vector = colSums
+    val beta = A.t(::,*) / sum(A, Axis._0).toDenseVector  //sum gives row vector = colSums
+    if(verbose) println("recovered beta = "+ beta.rows +"x"+beta.cols)
+    
+    beta
     //last line is beta
   }
   
   def expgrad(X : DenseMatrix[Double],y: DenseVector[Double],XtX : DenseMatrix[Double]) : DenseVector[Double] = {
     //note: DenseVector is a col vector; currently y here is passed as a col-vector
     
-    val tol     = 1e-30
-    val maxIter = 5000
+    val tol     = 1e-27
+    val maxIter = 500
+    val eta     = 100
+
     val filler : Double = 1.0/(X.rows)
     var alpha   = DenseMatrix.fill(1, X.rows){filler}                            //row-vector
     
@@ -181,26 +182,29 @@ object spectral {
     //[check] had to take y.t to make it row vector since ytX is row vector
 
     var converged = false
-    val eta       = 50.0
     var sseOld : Double = java.lang.Double.POSITIVE_INFINITY
+    var sse  : Double  = 0.0
     var its       = 1
+    var conv : Double = 0.0
     
     while((!converged) && (its < maxIter)) {
       var grad : DenseMatrix[Double] = ytX - (alpha*XtX)
-      val sse  : Double  = sum(grad :* grad)
+      
+      sse     = sum(grad :* grad)
       grad          = grad :* (eta*2.0)
       val maxderiv  = grad.max
       
       alpha = alpha :* exp(grad :- maxderiv)
       //[check] supposed to be element wise multiplication with alpha ?
-      
       alpha     = alpha / sum(alpha)
+      
       converged = abs(sqrt(sseOld) - sqrt(sse)) < tol
+      conv = abs(sqrt(sseOld) - sqrt(sse))
       sseOld    = sse
       its      += 1
-    }
-    //print("_.")
-    
+    } 
+    //println("reached: "+conv)
+
     alpha.toDenseVector
     //return(list(par=as.numeric(alpha), its=its, converged=converged,entropy=entropy, log.sse=log(sse)))
   }
