@@ -1,3 +1,12 @@
+/**
+ * Structural Topic Model by Molly Roberts, Brandon Stewart, Dustin Tingley
+ * Website		:	http://structuraltopicmodel.com/
+ *	 R Package	: https://github.com/bstewart/stm
+ * 
+ * Scala:
+ * @author  Alok Singh (a1singh@ucsd.edu)
+ */
+
 package sparkSTM
 
 import breeze.linalg.{DenseMatrix, DenseVector, diag, sum, inv,*}
